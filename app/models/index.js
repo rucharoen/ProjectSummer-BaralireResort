@@ -27,6 +27,7 @@ db.role = require("../models/role.model")(sequelize, Sequelize);
 db.type = require("../models/type.model")(sequelize, Sequelize);
 db.accommodation = require("../models/accommodation.model")(sequelize, Sequelize);
 db.pomotion = require("../models/pomotion")(sequelize, Sequelize);
+db.activity = require("../models/activity.model")(sequelize, Sequelize);
 
 // many-to-many
 db.role.belongsToMany(db.user,{
@@ -44,7 +45,7 @@ db.accommodation.belongsTo(db.type,{
      foreignKey: "type_id"
 });
 
-// One-to-many
+// One-to-many  ตารางโปโมชั่น กับ ไทด์
 db.type.hasMany(db.pomotion,{
     foreignKey: "type_id",
     onDelete: "CASCADE"
