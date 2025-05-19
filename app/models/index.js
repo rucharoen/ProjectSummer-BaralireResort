@@ -28,6 +28,7 @@ db.type = require("../models/type.model")(sequelize, Sequelize);
 db.accommodation = require("../models/accommodation.model")(sequelize, Sequelize);
 db.pomotion = require("../models/pomotion")(sequelize, Sequelize);
 db.activity = require("../models/activity.model")(sequelize, Sequelize);
+db.booking = require("../models/booking.model")(sequelize, Sequelize);
 
 // many-to-many
 db.role.belongsToMany(db.user,{
@@ -52,6 +53,27 @@ db.type.hasMany(db.pomotion,{
 });
 db.accommodation.belongsTo(db.type,{
      foreignKey: "type_id"
+});
+
+// One-to-Many
+db.user.hasMany(db.booking, {
+    foreignKey: "userId",
+    onDelete: "RESTRICT"
+});
+
+db.booking.belongsTo(db.user, {
+    foreignKey: "userId"
+});
+
+// One-to-Many: accommodation → booking
+db.accommodation.hasMany(db.booking, {
+    foreignKey: "accommodationId",
+    onDelete: "RESTRICT"
+});
+
+// ❗ ฝั่งกลับ booking → accommodation
+db.booking.belongsTo(db.accommodation, {
+    foreignKey: "accommodationId"
 });
 
 module.exports = db;

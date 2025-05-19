@@ -13,6 +13,13 @@ exports.signin = (req, res) => {
     // res.send(genPass);
     const {email, password} = req.body;
     console.log(email, password);
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValid = regex.test(email);
+    if(!isValid){
+        res.status(500).json({ message: "Invalid email address" });
+    }
+
+
 
     User.findOne({
         where: {
@@ -37,11 +44,11 @@ exports.signin = (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id },
+            { id: user.id , aa: '3434'},
             process.env.SECRET_KEY,
             {
                 algorithm: 'HS256',
-                allowInsecureKeySizes: true,
+                
                 expiresIn: '1d'
             }
         );

@@ -10,6 +10,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
         },
         
+        
         description: {
             type: Sequelize.TEXT,
             allowNull: true,
@@ -31,10 +32,12 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
             defaultValue: 0,
         },
+        
         image_name: {
             type: Sequelize.STRING,
             allowNull: true,
         },
+        
     });
     return Accommodation;
 }
