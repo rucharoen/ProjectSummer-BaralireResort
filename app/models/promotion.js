@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const Pomotion = sequelize.define("pomotion", {
+    const Promotion = sequelize.define("promotion", {
         id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
@@ -22,5 +22,5 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: true,
         },
     });
-    return Pomotion;
+    return Promotion;
 }

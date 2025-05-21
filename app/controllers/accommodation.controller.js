@@ -3,7 +3,7 @@ const Accommodation = db.accommodation;
 const Type = db.type;
 const User = db.user;
 const Booking = db.booking;
-const Pomotion = db.pomotion;
+const Promotion = db.promotion;
 const { Op } = require("sequelize");
 
 exports.getAll = async (req, res) => {
@@ -148,9 +148,9 @@ exports.getAllBookings = async (req, res) => {
 };
 
 
-exports.getAllPomotion = async (req, res) => {
+exports.getAllPromotion = async (req, res) => {
     try {
-        const pomotions = await Pomotion.findAll({
+        const promotions = await Promotion.findAll({
             attributes: [
                 'id',
                 'condition',
@@ -168,7 +168,7 @@ exports.getAllPomotion = async (req, res) => {
                 },
             ]
         });
-        res.status(200).json(pomotions); // ส่งข้อมูลกลับเป็น JSON
+        res.status(200).json(promotions); // ส่งข้อมูลกลับเป็น JSON
     } catch (error) {
         console.error("Error fetching promotions:", error);
         res.status(500).json({ message: "ไม่สามารถดึงข้อมูลโปรโมชั่นได้" });

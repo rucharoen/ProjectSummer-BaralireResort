@@ -26,7 +26,7 @@ db.role = require("../models/role.model")(sequelize, Sequelize);
 //db.user_roles = require("../models/user.roles.models")(sequelize, Sequelize);
 db.type = require("../models/type.model")(sequelize, Sequelize);
 db.accommodation = require("../models/accommodation.model")(sequelize, Sequelize);
-db.pomotion = require("../models/pomotion")(sequelize, Sequelize);
+db.promotion = require("../models/promotion")(sequelize, Sequelize);
 db.activity = require("../models/activity.model")(sequelize, Sequelize);
 db.booking = require("../models/booking.model")(sequelize, Sequelize);
 
@@ -47,11 +47,11 @@ db.accommodation.belongsTo(db.type,{
 });
 
 // One-to-many  ตารางโปโมชั่น กับ ไทด์
-db.type.hasMany(db.pomotion,{
+db.type.hasMany(db.promotion,{
     foreignKey: "type_id",
     onDelete: "CASCADE"
 });
-db.pomotion.belongsTo(db.type, {
+db.promotion.belongsTo(db.type, {
     foreignKey: "type_id"
 });
 

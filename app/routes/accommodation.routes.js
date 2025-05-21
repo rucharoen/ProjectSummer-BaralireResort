@@ -8,7 +8,7 @@ module.exports = (app) => {
     app.get("/api/accommodation/search", controller.getSearch);
     app.get("/api/accommodation",controller.getAll);
     app.get("/api/accommodation/booking",controller.getAllBookings);
-    app.get("/api/accommodation/promotion",controller.getAllPomotion);
+    app.get("/api/accommodation/promotion",controller.getAllPromotion);
     app.get("/api/accommodation/availableroom",controller.getAvailability);
     
 }     

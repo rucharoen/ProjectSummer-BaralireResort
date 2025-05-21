@@ -11,7 +11,7 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// db.booking.sync({ alter: true })
+// db.promotion.sync({ alter: true })
 //     .then(() => {
 //         console.log("Create table already.")
 //     })
