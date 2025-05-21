@@ -51,9 +51,10 @@ db.type.hasMany(db.pomotion,{
     foreignKey: "type_id",
     onDelete: "CASCADE"
 });
-db.accommodation.belongsTo(db.type,{
-     foreignKey: "type_id"
+db.pomotion.belongsTo(db.type, {
+    foreignKey: "type_id"
 });
+
 
 // One-to-Many
 db.user.hasMany(db.booking, {
@@ -75,5 +76,17 @@ db.accommodation.hasMany(db.booking, {
 db.booking.belongsTo(db.accommodation, {
     foreignKey: "accommodationId"
 });
+
+// One-to-Many: accommodation → booking
+db.accommodation.hasMany(db.booking, {
+    foreignKey: "accommodationId",
+    onDelete: "RESTRICT"
+});
+
+// ฝั่งกลับ: booking → belongsTo accommodation
+db.booking.belongsTo(db.accommodation, {
+    foreignKey: "accommodationId"
+});
+
 
 module.exports = db;

@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 require("./app/routes/auth.routes")(app);
 require("./app/routes/accommodation.routes")(app);
 require("./app/routes/activity.routes")(app);
-require("./app/routes/type.routes")
+require("./app/routes/type.routes")(app);
 
 
 const PORT = process.env.SERVER_PORT || 5000;
