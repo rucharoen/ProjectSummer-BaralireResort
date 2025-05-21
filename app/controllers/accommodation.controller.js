@@ -27,9 +27,8 @@ exports.getAll = async (req, res) => {
 
 
 exports.getSearch = async (req, res) => {
-  
   try {
-    const { destination, guests, checkIn, checkOut } = req.query;
+    const { destination, guests, checkIn, checkOut, onlyAvailable } = req.query;
 
     if (!checkIn || !checkOut) {
       return res.status(400).json({ message: "Please provide checkIn and checkOut dates." });
@@ -88,11 +87,13 @@ exports.getSearch = async (req, res) => {
       };
     });
 
-    // 6. กรองเฉพาะที่มีห้องว่าง
-    const availableOnly = results.filter(acc => acc.availableRooms > 0);
+    // 6. กรองเฉพาะที่มีห้องว่างถ้าผู้ใช้กำหนด
+    let finalResults = results;
+    if (onlyAvailable === 'true') {
+      finalResults = results.filter(acc => acc.availableRooms > 0);
+    }
 
-    res.status(200).json(availableOnly);
-
+    res.status(200).json(finalResults);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error searching accommodations" });
