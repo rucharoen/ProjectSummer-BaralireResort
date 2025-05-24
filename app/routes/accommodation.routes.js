@@ -10,5 +10,6 @@ module.exports = (app) => {
     app.get("/api/accommodation/booking",controller.getAllBookings);
     app.get("/api/accommodation/promotion",controller.getAllPromotion);
     app.get("/api/accommodation/availableroom",controller.getAvailability);
+    app.get("/api/accommodation/:id/rating", controller.getAccommodationRating);
     
 }     

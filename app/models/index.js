@@ -88,5 +88,20 @@ db.booking.belongsTo(db.accommodation, {
     foreignKey: "accommodationId"
 });
 
+//many to many
+db.booking.belongsToMany(db.type,{
+    through: "type_id"
+});
+db.type.belongsToMany(db.booking,{
+    through: "type_id"
+});
+
+//many to many
+db.booking.belongsToMany(db.promotion,{
+    through: "type_promo"
+});
+db.promotion.belongsToMany(db.booking,{
+    through: "type_promo"
+});
 
 module.exports = db;

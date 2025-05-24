@@ -11,13 +11,15 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// db.promotion.sync({ alter: true })
+// db.type_promo.sync({ alter: true })
 //     .then(() => {
 //         console.log("Create table already.")
 //     })
 //     .catch((err) => {
 //         console.log(err);
 //     })
+
+    
 
 db.sequelize.sync({ force: false }).then(() => {
     console.log("Database sync...");

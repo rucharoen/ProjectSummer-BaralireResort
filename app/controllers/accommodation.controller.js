@@ -1,4 +1,6 @@
 const db = require("../models");
+const Sequelize = require("sequelize");
+
 const Accommodation = db.accommodation;
 const Type = db.type;
 const User = db.user;
@@ -123,22 +125,57 @@ exports.getAllBookings = async (req, res) => {
                 {
                     model: User,
                     attributes: ['name', 'lastname', 'email']
+                },
+                {
+                    model: Promotion,
+                    attributes: ['percent'],
+                    through: { attributes: [] }
                 }
             ],
             order: [['createdAt', 'DESC']]
         });
 
         const bookingsWithUpdatedPrice = bookings.map(booking => {
-    const price = booking.totalPrice;
-    const nights = booking.totalNights;
+            const adult = booking.adult;
+            const child = booking.child;
+            const nights = booking.totalNights;
+            const basePrice = booking.totalPrice;
+            const promotion = booking.promotions?.[0];
+            const percent = promotion?.percent || 0;
 
-    const updatedPrice = price * nights;
+            // ราคาห้องรวมตามจำนวนคืน
+            const roomPriceTotal = basePrice * nights;
 
-    return {
-        ...booking.toJSON(),
-        updatedPrice
-    };
-});
+            // หักส่วนลดเฉพาะค่าห้อง
+            const discountedRoomPrice = roomPriceTotal * (1 - percent / 100);
+
+            // คิดราคาคนเพิ่ม extracharge
+            let extraCharge = 0;
+            if (adult === 1) {
+                if (child > 2) {
+                    extraCharge += (child - 2) * 749;
+                }
+            } else if (adult === 2) {
+                if (child > 0) {
+                    extraCharge += child * 749;
+                }
+            } else if (adult > 2) {
+                extraCharge += (adult - 2) * 1000;
+                extraCharge += child * 749;
+            }
+
+            //  ราคารวมหลังลด
+            const finalPrice = discountedRoomPrice + extraCharge;
+
+            return {
+                ...booking.toJSON(),
+                roomPriceTotal: roomPriceTotal.toFixed(2),
+                discountedRoomPrice: discountedRoomPrice.toFixed(2),
+                extraCharge: extraCharge,
+                discountPercent: percent,
+                finalPrice: finalPrice.toFixed(2)
+            };
+        });
 
         res.status(200).json(bookingsWithUpdatedPrice);
     } catch (err) {
@@ -229,3 +266,29 @@ exports.getAvailability = async (req, res) => {
   }
 };
 
+exports.getAccommodationRating = async (req, res) => {
+  const accommodationId = req.params.id;
+
+  try {
+    const result = await Booking.findOne({
+      attributes: [
+        [Sequelize.fn("AVG", Sequelize.col("checkOutRating")), "avgRating"],
+        [Sequelize.fn("COUNT", Sequelize.col("checkOutRating")), "totalReviews"],
+      ],
+      where: {
+        accommodationId,
+        checkOutRating: {
+          [Sequelize.Op.not]: null,
+        }
+      }
+    });
+
+    const avgRating = parseFloat(result.dataValues.avgRating).toFixed(1);
+    const totalReviews = parseInt(result.dataValues.totalReviews);
+
+    res.json({ avgRating, totalReviews });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงคะแนน" });
+  }
+}
