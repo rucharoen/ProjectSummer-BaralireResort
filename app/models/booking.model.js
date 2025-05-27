@@ -41,7 +41,8 @@ module.exports = (sequelize, Sequelize) => {
         },
         paymentStatus: {
             type: Sequelize.BOOLEAN,
-            allowNull: false,
+            allowNull: true, // true = paid  , flase = failed, null = pending
+            defaultValue: null, // null =pading
         },
         paymentMethod: {
             type: Sequelize.STRING,

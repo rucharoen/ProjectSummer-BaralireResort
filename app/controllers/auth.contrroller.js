@@ -11,6 +11,7 @@ require("dotenv/config");
 exports.signin = (req, res) => {
     // const genPass = bcrypt.hashSync(req.body.password, 8);
     // res.send(genPass);
+    console.log("signin")
     const {email, password} = req.body;
     console.log(email, password);
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

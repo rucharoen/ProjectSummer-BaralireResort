@@ -11,3 +11,17 @@ exports.getAll = async (req, res) => {
         res.status(500).json({ message: "Error fetching accommodation types" });
     }
 }
+
+exports.getById = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const type = await Type.findAll({
+             where: {
+                id: id,
+            }
+        });         
+        res.status(200).json(type);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching accommodation types" });
+    }
+}

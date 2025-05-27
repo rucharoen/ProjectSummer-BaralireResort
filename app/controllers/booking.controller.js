@@ -1,7 +1,28 @@
-// const db = require("../models");
-// const Booking = db.booking;
+const db = require("../models");
+const Booking = db.booking;
 // const Accommodation = db.accommodation;
 
+
+exports.createBooking = async (req, res) => {
+    const { adult, child, checkInDate, checkOutDate } = req.query;
+
+    try{
+
+        const booking = await Booking.create({
+            userId,
+            adult,
+            child,
+            checkInDate,
+            checkOutDate
+        });
+    }catch (error) {
+        console.error("Error creating booking:", error);
+        res.status(500).json({ message: "Error creating booking." });
+    }
+    finally {
+        res.status(201).json({ message: "Booking created successfully." });
+    }
+}
 // exports.getAllBookings = async (req, res) => {
 //     try {
 //         const bookings = await Booking.findAll({

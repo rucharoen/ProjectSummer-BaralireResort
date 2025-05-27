@@ -11,13 +11,13 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// db.type_promo.sync({ alter: true })
-//     .then(() => {
-//         console.log("Create table already.")
-//     })
-//     .catch((err) => {
-//         console.log(err);
-//     })
+db.booking.sync({ alter: true })
+    .then(() => {
+        console.log("Create table already.")
+    })
+    .catch((err) => {
+        console.log(err);
+    })
 
     
 
@@ -34,7 +34,8 @@ require("./app/routes/auth.routes")(app);
 require("./app/routes/accommodation.routes")(app);
 require("./app/routes/activity.routes")(app);
 require("./app/routes/type.routes")(app);
-
+require("./app/routes/payment.routes")(app);
+require("./app/routes/booking.routes")(app);
 
 const PORT = process.env.SERVER_PORT || 5000;
 app.listen(PORT, () => {

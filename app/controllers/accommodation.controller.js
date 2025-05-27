@@ -187,7 +187,7 @@ exports.getAllBookings = async (req, res) => {
 
 exports.getAllPromotion = async (req, res) => {
     try {
-        const promotions = await Promotion.findAll({
+        const promotions = await db.promotion.findAll({
             attributes: [
                 'id',
                 'condition',
@@ -200,11 +200,31 @@ exports.getAllPromotion = async (req, res) => {
                     model: Type,
                     attributes: [
                         
-                        'name'
+                        'name',
+                        'details'
                     ]
                 },
             ]
         });
+
+    //     const bookedCountByAccommodation = {};
+    //   promotions.forEach(booking => {
+    //   const accommodationId = booking.accommodationId;
+    //   const amount = 1; // สมมุติ 1 booking = 1 ห้อง ถ้ามีฟิลด์จำนวนใน booking ให้แก้ตรงนี้
+
+    //   if (!bookedCountByAccommodation[accommodationId]) {
+    //     bookedCountByAccommodation[accommodationId] = 0;
+    //   }
+
+    //   bookedCountByAccommodation[accommodationId] += amount;
+    // });
+
+    // // สร้างข้อมูล availability โดยเพิ่ม bookedRooms และ availableRooms
+    // const availability = promotions.map(acc => {
+    //   const bookedRooms = bookedCountByAccommodation[acc.id] || 0;
+    //   const totalRooms = acc.total_rooms || 0;
+    //   const availableRooms = totalRooms - bookedRooms;
+    // });
         res.status(200).json(promotions); // ส่งข้อมูลกลับเป็น JSON
     } catch (error) {
         console.error("Error fetching promotions:", error);
