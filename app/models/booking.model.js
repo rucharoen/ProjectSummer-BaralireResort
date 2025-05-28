@@ -39,11 +39,26 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.FLOAT,
             allowNull: false,
         },
-        paymentStatus: {
+        doubleExtraBed:{
             type: Sequelize.BOOLEAN,
-            allowNull: true, // true = paid  , flase = failed, null = pending
-            defaultValue: null, // null =pading
+            allowNull: true, 
+            defaultValue: null,
         },
+        extraBed:{
+            type: Sequelize.BOOLEAN,
+            allowNull: true, 
+            defaultValue: null,
+        },
+        // paymentStatus: {
+        //     type: Sequelize.BOOLEAN,
+        //     allowNull: true, // true = paid  , flase = failed, null = pending
+        //     defaultValue: null, // null =pading
+        // },
+        bookingStatus: {
+        type: Sequelize.ENUM('Pending', 'Paid', 'Failed', 'Overdue', 'Cancelled'),
+        defaultValue: 'Pending',
+        allowNull: false
+    },
         paymentMethod: {
             type: Sequelize.STRING,
             allowNull: false,
@@ -100,6 +115,10 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: true,
         },
         checkOutTimestamp: {
+            type: Sequelize.DATE,
+            allowNull: true,
+        },
+        due_Date: {
             type: Sequelize.DATE,
             allowNull: true,
         },

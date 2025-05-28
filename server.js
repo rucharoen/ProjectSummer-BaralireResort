@@ -4,6 +4,8 @@ const db = require("./app/models");
 const cors = require("cors");
 const path = require("path");
 require("dotenv/config");
+const cron = require("node-cron")
+const updateOverdue = require("./cron/updateOverdue");
 
 app.use(cors({ origin: "*" }));
 
@@ -11,13 +13,14 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-db.booking.sync({ alter: true })
-    .then(() => {
-        console.log("Create table already.")
-    })
-    .catch((err) => {
-        console.log(err);
-    })
+// db.booking.sync({ alter: true })
+//     .then(() => {
+//         console.log("Create table already.")
+//     })
+//     .catch((err) => {
+//         console.log(err);
+//     })
+
 
     
 
@@ -36,6 +39,14 @@ require("./app/routes/activity.routes")(app);
 require("./app/routes/type.routes")(app);
 require("./app/routes/payment.routes")(app);
 require("./app/routes/booking.routes")(app);
+
+
+
+cron.schedule('* * * * *', () => {
+   updateOverdue();
+});
+
+
 
 const PORT = process.env.SERVER_PORT || 5000;
 app.listen(PORT, () => {

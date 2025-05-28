@@ -4,43 +4,86 @@ const Booking = db.booking;
 const { Op } = require("sequelize");
 
 exports.getAllPayment = async (req, res) => {
+  try {
+    const bookings = await Booking.findAll({
+      order: [['id', 'ASC']],
+    });
+
+    const results = bookings.map(booking => ({
+      id: booking.id,
+      bookingStatus: booking.bookingStatus,
+      createdAt: booking.createdAt,
+    }));
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error fetching payments:", error);
+    res.status(500).json({ message: "Error fetching payment" });
+  }
+};
+
+exports.confirmBookingPayment = async (req, res) => {
+    const id = req.params.id;
+    if (!id) {
+        return res.status(400).json({ message: "กรุณาระบุ ID การจอง" });
+    }
+
     try {
-        const bookings = await Booking.findAll({
-            order: [['id', 'ASC']],
-        });
+        const booking = await Booking.findByPk(id);
+        if (!booking) {
+            return res.status(404).json({ message: "ไม่พบข้อมูลการจอง" });
+        }
 
-        const now = new Date();
+        if (booking.bookingStatus === 'Paid') {
+            return res.status(400).json({ message: "รายการนี้ชำระเงินไปแล้ว" });
+        }
 
-        const results = bookings.map(booking => {
-            let status = "Unknown";
+        booking.bookingStatus = 'Paid';
+        booking.paymentDate = new Date();
+        booking.due_Date = new Date();
+        await booking.save();
 
-            if (booking.paymentStatus === true) {
-                status = "Paid";
-            } else if (booking.paymentStatus === false) {
-                status = "Failed";
-            } else if (booking.paymentStatus === null) {
-                const createdAt = new Date(booking.createdAt);
-                const diffMs = now - createdAt;
-                const diffHours = diffMs / (1000 * 60 * 60);
+        res.status(200).json({ message: "ยืนยันการชำระเงินสำเร็จ", booking });
 
-                if (diffHours <= 24) {
-                    status = "Pending";
-                } else {
-                    status = "Overdue";
-                }
-            }
-
-            return {
-                id: booking.id,
-                paymentStatus: booking.paymentStatus,
-                createdAt: booking.createdAt,
-                status: status
-            };
-        });
-
-        res.status(200).json(results);
     } catch (error) {
-        console.error("Error fetching payments:", error);
-        res.status(500).json({ message: "Error fetching payment" });
+        console.error("Error confirming payment:", error);
+        res.status(500).json({ message: "เกิดข้อผิดพลาดระหว่างการยืนยันการชำระเงิน" });
     }
 };
+
+
+
+
+// exports.updateOverdueBookings = async (req, res) => {
+//   try {
+//     const now = new Date();
+
+//     // ดึง bookings ที่ยังเป็น Pending เกิน 24 ชม.
+//     const overdueBookings = await Booking.findAll({
+//       where: {
+//         bookingStatus: 'Pending',
+//         createdAt: {
+//           [Op.lte]: new Date(now.getTime() - 24 * 60 * 60 * 1000) // เกิน 24 ชม.
+//         }
+//       }
+//     });
+
+//     // อัปเดต bookingStatus = 'Overdue'
+//     for (const booking of overdueBookings) {
+//       booking.bookingStatus = 'Overdue';
+//       await booking.save();
+//     }
+
+//     res.status(200).json({
+//       message: `${overdueBookings.length} bookings have been marked as Overdue.`,
+//       updated: overdueBookings.map(b => ({
+//         id: b.id,
+//         createdAt: b.createdAt,
+//         updatedStatus: "Overdue"
+//       }))
+//     });
+//   } catch (error) {
+//     console.error("Error updating overdue bookings:", error);
+//     res.status(500).json({ message: "Error updating overdue bookings" });
+//   }
+// };

@@ -76,3 +76,14 @@ exports.signin = (req, res) => {
         res.status(500).json({ message: err.message });
     });
 };
+
+
+exports.hashPassword = (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+    }
+
+    const hashed = bcrypt.hashSync(password, 8);
+    res.status(200).json({ hashed });
+};

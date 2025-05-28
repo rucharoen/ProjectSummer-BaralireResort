@@ -64,7 +64,13 @@ exports.getSearch = async (req, res) => {
     // 3. ดึง bookings ที่ยัง active อยู่ในช่วงเวลานั้น และ paymentStatus == true
     const bookings = await Booking.findAll({
       where: {
-        paymentStatus: true,
+        [Op.or]: [
+      { bookingStatus: 'Paid' },
+      {
+        bookingStatus: 'Pending',
+        due_Date: { [Op.gte]: new Date() } // ยังไม่ถึงกำหนด
+      }
+    ],
         [Op.and]: [
           { checkInDate: { [Op.lte]: parsedCheckOut } },
           { checkOutDate: { [Op.gte]: parsedCheckIn } }
@@ -115,7 +121,9 @@ exports.getAllBookings = async (req, res) => {
                 'checkInDate',
                 'checkOutDate',
                 'totalNights',
-                'totalPrice'
+                'totalPrice',
+                'extraBed',
+                'doubleExtraBed'
             ],
             include: [
                 {
@@ -143,28 +151,35 @@ exports.getAllBookings = async (req, res) => {
             const promotion = booking.promotions?.[0];
             const percent = promotion?.percent || 0;
 
-            // ราคาห้องรวมตามจำนวนคืน
             const roomPriceTotal = basePrice * nights;
-
-            // หักส่วนลดเฉพาะค่าห้อง
             const discountedRoomPrice = roomPriceTotal * (1 - percent / 100);
 
-            // คิดราคาคนเพิ่ม extracharge
-            let extraCharge = 0;
+            // แยกรายการค่าใช้จ่าย
+            let extraPersonCharge = 0;
+            let extraBedCharge = 0;
+            let doubleExtraBedCharge = 0;
+
             if (adult === 1) {
                 if (child > 2) {
-                    extraCharge += (child - 2) * 749;
+                    extraPersonCharge += (child - 2) * 749;
                 }
             } else if (adult === 2) {
                 if (child > 0) {
-                    extraCharge += child * 749;
+                    extraPersonCharge += child * 749;
                 }
             } else if (adult > 2) {
-                extraCharge += (adult - 2) * 1000;
-                extraCharge += child * 749;
+                extraPersonCharge += (adult - 2) * 1000;
+                extraPersonCharge += child * 749;
             }
 
-            //  ราคารวมหลังลด
+            if (booking.extraBed) {
+                extraBedCharge = 200;
+            }
+            if (booking.doubleExtraBed) {
+                doubleExtraBedCharge = 500;
+            }
+
+            const extraCharge = extraPersonCharge + extraBedCharge + doubleExtraBedCharge;
             const finalPrice = discountedRoomPrice + extraCharge;
 
             return {
@@ -172,6 +187,11 @@ exports.getAllBookings = async (req, res) => {
                 roomPriceTotal: roomPriceTotal.toFixed(2),
                 discountedRoomPrice: discountedRoomPrice.toFixed(2),
                 extraCharge: extraCharge,
+                extraDetails: {
+                    extraPersonCharge: extraPersonCharge,
+                    extraBedCharge: extraBedCharge,
+                    doubleExtraBedCharge: doubleExtraBedCharge
+                },
                 discountPercent: percent,
                 finalPrice: finalPrice.toFixed(2)
             };
@@ -183,6 +203,7 @@ exports.getAllBookings = async (req, res) => {
         res.status(500).json({ message: "Error retrieving bookings." });
     }
 };
+
 
 
 exports.getAllPromotion = async (req, res) => {
@@ -234,16 +255,37 @@ exports.getAllPromotion = async (req, res) => {
 
 
 exports.getAvailability = async (req, res) => {
+  const { checkIn, checkOut, } = req.query;
+
+  const parsedCheckIn = new Date(checkIn);
+    const parsedCheckOut = new Date(checkOut);
+
   try {
     // ดึงข้อมูลห้องพักทั้งหมด
     const accommodations = await Accommodation.findAll();
 
     // ดึงข้อมูล Booking ที่ชำระเงินแล้ว
-    const bookings = await Booking.findAll({
-      where: {
-        paymentStatus: true
+    const now = new Date();
+console.log("Now:", now);
+
+const bookings = await Booking.findAll({
+
+  
+  where: {
+    [Op.or]: [
+      { bookingStatus: 'Paid' },
+      {
+        bookingStatus: 'Pending',
+        due_Date: { [Op.gte]: now }
       }
-    });
+    ],
+    [Op.and]: [
+      { checkInDate: { [Op.lte]: parsedCheckOut } },
+      { checkOutDate: { [Op.gte]: parsedCheckIn } }
+    ]
+  }
+ });
+// res.send(bookings);
 
     // นับจำนวนห้องที่ถูกจอง สำหรับแต่ละ accommodationId
     const bookedCountByAccommodation = {};
