@@ -29,6 +29,8 @@ db.accommodation = require("../models/accommodation.model")(sequelize, Sequelize
 db.promotion = require("../models/promotion")(sequelize, Sequelize);
 db.activity = require("../models/activity.model")(sequelize, Sequelize);
 db.booking = require("../models/booking.model")(sequelize, Sequelize);
+db.payment = require("../models/payment.model")(sequelize, Sequelize);
+db.icon = require("../models/icon.model")(sequelize, Sequelize);
 
 // many-to-many
 db.role.belongsToMany(db.user,{
@@ -102,6 +104,18 @@ db.booking.belongsToMany(db.promotion,{
 });
 db.promotion.belongsToMany(db.booking,{
     through: "type_promo"
+});
+
+// Payment hasMany Bookings
+db.payment.hasMany(db.booking, {
+  as: 'bookings',
+  foreignKey: 'paymentId'
+});
+ 
+// Booking belongsTo Payment
+db.booking.belongsTo(db.payment, {
+  as: 'payment',
+  foreignKey: 'paymentId'
 });
 
 module.exports = db;

@@ -7,6 +7,7 @@ const User = db.user;
 const Booking = db.booking;
 const Promotion = db.promotion;
 const { Op } = require("sequelize");
+const Payment = db.payment;
 
 exports.getAll = async (req, res) => {
     try {
@@ -39,7 +40,6 @@ exports.getSearch = async (req, res) => {
     const parsedCheckIn = new Date(checkIn);
     const parsedCheckOut = new Date(checkOut);
 
-    // 1. Include condition for Type
     const includeCondition = {
       model: Type,
       attributes: ["id", "name"],
@@ -52,7 +52,6 @@ exports.getSearch = async (req, res) => {
       };
     }
 
-    // 2. ดึง accommodation ทั้งหมดที่รองรับ guests
     const accommodations = await Accommodation.findAll({
       include: [includeCondition],
       attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -61,16 +60,15 @@ exports.getSearch = async (req, res) => {
       } : undefined
     });
 
-    // 3. ดึง bookings ที่ยัง active อยู่ในช่วงเวลานั้น และ paymentStatus == true
     const bookings = await Booking.findAll({
       where: {
         [Op.or]: [
-      { bookingStatus: 'Paid' },
-      {
-        bookingStatus: 'Pending',
-        due_Date: { [Op.gte]: new Date() } // ยังไม่ถึงกำหนด
-      }
-    ],
+          { bookingStatus: 'Paid' },
+          {
+            bookingStatus: 'Pending',
+            due_Date: { [Op.gte]: new Date() }
+          }
+        ],
         [Op.and]: [
           { checkInDate: { [Op.lte]: parsedCheckOut } },
           { checkOutDate: { [Op.gte]: parsedCheckIn } }
@@ -78,14 +76,13 @@ exports.getSearch = async (req, res) => {
       }
     });
 
-    // 4. นับจำนวน booking ต่อ accommodationId
     const bookingCount = {};
     bookings.forEach(b => {
       const accId = b.accommodationId;
-      bookingCount[accId] = (bookingCount[accId] || 0) + 1;
+      const roomsBooked = b.numberOfRooms || 1;
+      bookingCount[accId] = (bookingCount[accId] || 0) + roomsBooked;
     });
 
-    // 5. ใส่ availableRooms ลงในผลลัพธ์
     const results = accommodations.map(acc => {
       const bookedRooms = bookingCount[acc.id] || 0;
       const availableRooms = acc.total_rooms - bookedRooms;
@@ -95,7 +92,6 @@ exports.getSearch = async (req, res) => {
       };
     });
 
-    // 6. กรองเฉพาะที่มีห้องว่างถ้าผู้ใช้กำหนด
     let finalResults = results;
     if (onlyAvailable === 'true') {
       finalResults = results.filter(acc => acc.availableRooms > 0);
@@ -113,95 +109,120 @@ exports.getSearch = async (req, res) => {
 
 
 exports.getAllBookings = async (req, res) => {
-    try {
-        const bookings = await Booking.findAll({
-            attributes: [
-                'adult',
-                'child',
-                'checkInDate',
-                'checkOutDate',
-                'totalNights',
-                'totalPrice',
-                'extraBed',
-                'doubleExtraBed'
-            ],
-            include: [
-                {
-                    model: Accommodation,
-                    attributes: ['name']
-                },
-                {
-                    model: User,
-                    attributes: ['name', 'lastname', 'email']
-                },
-                {
-                    model: Promotion,
-                    attributes: ['percent'],
-                    through: { attributes: [] }
-                }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
+  try {
+    const bookings = await Booking.findAll({
+      attributes: [
+        'adult',
+        'child',
+        'checkInDate',
+        'checkOutDate',
+        'totalNights',
+        'totalPrice',
+        'extraBed',
+        'doubleExtraBed',
+        'numberOfRooms'
+      ],
+      include: [
+        {
+          model: Accommodation,
+          attributes: ['name']
+        },
+        {
+          model: User,
+          attributes: ['name', 'lastname', 'email']
+        },
+        {
+          model: Promotion,
+          attributes: ['percent'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
-        const bookingsWithUpdatedPrice = bookings.map(booking => {
-            const adult = booking.adult;
-            const child = booking.child;
-            const nights = booking.totalNights;
-            const basePrice = booking.totalPrice;
-            const promotion = booking.promotions?.[0];
-            const percent = promotion?.percent || 0;
+    const bookingsWithUpdatedPrice = bookings.map(booking => {
+      const adult = booking.adult;
+      const child = booking.child;
+      const nights = booking.totalNights;
+      const basePrice = booking.totalPrice;
+      const promotion = booking.promotions?.[0];
+      const percent = promotion?.percent || 0;
+      const numberOfRooms = booking.numberOfRooms || 1;
 
-            const roomPriceTotal = basePrice * nights;
-            const discountedRoomPrice = roomPriceTotal * (1 - percent / 100);
+      const roomPriceTotal = basePrice * nights * numberOfRooms;
+      const discountedRoomPrice = roomPriceTotal * (1 - percent / 100);
 
-            // แยกรายการค่าใช้จ่าย
-            let extraPersonCharge = 0;
-            let extraBedCharge = 0;
-            let doubleExtraBedCharge = 0;
+      let extraPersonCharge = 0;
+      let extraBedCharge = 0;
+      let doubleExtraBedCharge = 0;
 
-            if (adult === 1) {
-                if (child > 2) {
-                    extraPersonCharge += (child - 2) * 749;
-                }
-            } else if (adult === 2) {
-                if (child > 0) {
-                    extraPersonCharge += child * 749;
-                }
-            } else if (adult > 2) {
-                extraPersonCharge += (adult - 2) * 1000;
-                extraPersonCharge += child * 749;
-            }
+      if (adult === 1) {
+        if (child > 3) {
+          return {
+            ...booking.toJSON(),
+            error: "ไม่สามารถมีเด็กมากกว่า 3 คนได้ถ้ามีผู้ใหญ่เพียง 1 คน"
+          };
+        } else if (child === 3) {
+          extraPersonCharge += 749;
+        }
+      } else if (adult === 2) {
+        if (child > 1) {
+          return {
+            ...booking.toJSON(),
+            error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 2 คน"
+          };
+        } else if (child === 1) {
+          extraPersonCharge += 749;
+        }
+      } else if (adult === 3) {
+        if (child > 1) {
+          return {
+            ...booking.toJSON(),
+            error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 3 คน"
+          };
+        } else {
+          extraPersonCharge += 1000;
+          if (child === 1) {
+            extraPersonCharge += 749;
+          }
+        }
+      } else if (adult > 3) {
+        return {
+          ...booking.toJSON(),
+          error: "ไม่สามารถมีผู้ใหญ่เกิน 3 คนต่อห้องได้"
+        };
+      }
 
-            if (booking.extraBed) {
-                extraBedCharge = 200;
-            }
-            if (booking.doubleExtraBed) {
-                doubleExtraBedCharge = 500;
-            }
+      if (booking.extraBed) {
+        extraBedCharge = 200;
+      }
+      if (booking.doubleExtraBed) {
+        doubleExtraBedCharge = 500;
+      }
 
-            const extraCharge = extraPersonCharge + extraBedCharge + doubleExtraBedCharge;
-            const finalPrice = discountedRoomPrice + extraCharge;
+      const extraCharge = extraPersonCharge + extraBedCharge + doubleExtraBedCharge;
+      const finalPrice = discountedRoomPrice + extraCharge;
 
-            return {
-                ...booking.toJSON(),
-                roomPriceTotal: roomPriceTotal.toFixed(2),
-                discountedRoomPrice: discountedRoomPrice.toFixed(2),
-                extraCharge: extraCharge,
-                extraDetails: {
-                    extraPersonCharge: extraPersonCharge,
-                    extraBedCharge: extraBedCharge,
-                    doubleExtraBedCharge: doubleExtraBedCharge
-                },
-                discountPercent: percent,
-                finalPrice: finalPrice.toFixed(2)
-            };
-        });
+      return {
+        ...booking.toJSON(),
+        roomPriceTotal: roomPriceTotal.toFixed(2),
+        discountedRoomPrice: discountedRoomPrice.toFixed(2),
+        extraCharge,
+        extraDetails: {
+          extraPersonCharge,
+          extraBedCharge,
+          doubleExtraBedCharge
+        },
+        discountPercent: percent,
+        finalPrice: finalPrice.toFixed(2)
+      };
+    });
 
-        res.status(200).json(bookingsWithUpdatedPrice);
-    } catch (err) {
-        console.error("Error fetching bookings:", err);
-        res.status(500).json({ message: "Error retrieving bookings." });
-    }
+    res.status(200).json(bookingsWithUpdatedPrice);
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+    res.status(500).json({ message: "Error retrieving bookings." });
+  }
 };
 
 
@@ -255,53 +276,46 @@ exports.getAllPromotion = async (req, res) => {
 
 
 exports.getAvailability = async (req, res) => {
-  const { checkIn, checkOut, } = req.query;
-
+  const { checkIn, checkOut } = req.query;
   const parsedCheckIn = new Date(checkIn);
-    const parsedCheckOut = new Date(checkOut);
+  const parsedCheckOut = new Date(checkOut);
+  const now = new Date();
 
   try {
-    // ดึงข้อมูลห้องพักทั้งหมด
     const accommodations = await Accommodation.findAll();
 
-    // ดึงข้อมูล Booking ที่ชำระเงินแล้ว
-    const now = new Date();
-console.log("Now:", now);
-
-const bookings = await Booking.findAll({
-
-  
-  where: {
-    [Op.or]: [
-      { bookingStatus: 'Paid' },
-      {
-        bookingStatus: 'Pending',
-        due_Date: { [Op.gte]: now }
+    const bookings = await Booking.findAll({
+      include: [
+        {
+          model: Payment,
+          as: 'payment',
+          where: {
+            [Op.or]: [
+              { paymentStatus: 'Paid' },
+              {
+                paymentStatus: 'Pending',
+                due_Date: { [Op.gte]: now }
+              }
+            ]
+          },
+          required: true
+        }
+      ],
+      where: {
+        [Op.and]: [
+          { checkInDate: { [Op.lte]: parsedCheckOut } },
+          { checkOutDate: { [Op.gte]: parsedCheckIn } }
+        ]
       }
-    ],
-    [Op.and]: [
-      { checkInDate: { [Op.lte]: parsedCheckOut } },
-      { checkOutDate: { [Op.gte]: parsedCheckIn } }
-    ]
-  }
- });
-// res.send(bookings);
-
-    // นับจำนวนห้องที่ถูกจอง สำหรับแต่ละ accommodationId
-    const bookedCountByAccommodation = {};
-
-    bookings.forEach(booking => {
-      const accommodationId = booking.accommodationId;
-      const amount = 1; // สมมุติ 1 booking = 1 ห้อง ถ้ามีฟิลด์จำนวนใน booking ให้แก้ตรงนี้
-
-      if (!bookedCountByAccommodation[accommodationId]) {
-        bookedCountByAccommodation[accommodationId] = 0;
-      }
-
-      bookedCountByAccommodation[accommodationId] += amount;
     });
 
-    // สร้างข้อมูล availability โดยเพิ่ม bookedRooms และ availableRooms
+    const bookedCountByAccommodation = {};
+    bookings.forEach(booking => {
+      const accommodationId = booking.accommodationId;
+      const amount = booking.numberOfRooms || 1;
+      bookedCountByAccommodation[accommodationId] = (bookedCountByAccommodation[accommodationId] || 0) + amount;
+    });
+
     const availability = accommodations.map(acc => {
       const bookedRooms = bookedCountByAccommodation[acc.id] || 0;
       const totalRooms = acc.total_rooms || 0;
@@ -310,8 +324,8 @@ const bookings = await Booking.findAll({
       return {
         accommodationName: acc.name,
         total_rooms: totalRooms,
-        bookedRooms: bookedRooms,
-        availableRooms: availableRooms >= 0 ? availableRooms : 0 // กันกรณีติดลบ
+        bookedRooms,
+        availableRooms: availableRooms >= 0 ? availableRooms : 0
       };
     });
 
@@ -320,7 +334,7 @@ const bookings = await Booking.findAll({
       data: availability
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getAvailability:", error);
     res.status(500).json({
       success: false,
       message: 'Server Error'

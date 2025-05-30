@@ -9,15 +9,20 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             allowNull: false,
         },
+        numberOfRooms: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 1,
+        },
         adult:{
             type: Sequelize.INTEGER,
             allowNull: false,
-             defaultValue: 0,
+            defaultValue: 1,
         },
         child:{
             type: Sequelize.INTEGER,
             allowNull: false,
-             defaultValue: 0,
+            defaultValue: 0,
         },
         accommodationId: {
             type: Sequelize.INTEGER,
@@ -49,16 +54,11 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: true, 
             defaultValue: null,
         },
-        // paymentStatus: {
-        //     type: Sequelize.BOOLEAN,
-        //     allowNull: true, // true = paid  , flase = failed, null = pending
-        //     defaultValue: null, // null =pading
+        // bookingStatus: {
+        //     type: Sequelize.ENUM('Pending', 'Paid', 'Failed', 'Overdue', 'Cancelled'),
+        //     defaultValue: 'Pending',
+        //     allowNull: false
         // },
-        bookingStatus: {
-        type: Sequelize.ENUM('Pending', 'Paid', 'Failed', 'Overdue', 'Cancelled'),
-        defaultValue: 'Pending',
-        allowNull: false
-    },
         paymentMethod: {
             type: Sequelize.STRING,
             allowNull: false,
@@ -67,18 +67,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DATE,
             allowNull: true,
         },
-        // guestName: {
-        //     type: Sequelize.STRING,
-        //     allowNull: false,
-        // },
-        // guestEmail: {
-        //     type: Sequelize.STRING,
-        //     allowNull: false,
-        // },
-        // guestPhone: {
-        //     type: Sequelize.STRING,
-        //     allowNull: false,
-        //},
         specialRequests: {
             type: Sequelize.TEXT,
             allowNull: true,
@@ -118,10 +106,13 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DATE,
             allowNull: true,
         },
-        due_Date: {
-            type: Sequelize.DATE,
-            allowNull: true,
-        },
+        // due_Date: {
+        //     type: Sequelize.DATE,
+        //     allowNull: true,
+        // },
+        
     });
+
+    
     return Booking;
-}
+};

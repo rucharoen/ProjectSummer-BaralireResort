@@ -1,31 +1,90 @@
 const db = require("../models");
 const Booking = db.booking;
-
+const Payment = db.payment;
 const User = db.user;
 const Accommodation = db.accommodation;
 const Promotion = db.promotion;
 
 
-exports.createBooking = async (req, res) => {
-    const { adult, child, checkInDate, checkOutDate } = req.query;
+// ใช้ req.body เพราะเป็น POST request
+exports.createMultiBooking = async (req, res) => {
+  const { userId, bookings, paymentMethod } = req.body;
 
-    try{
+  if (!userId || !bookings || !Array.isArray(bookings) || bookings.length === 0 || !paymentMethod) {
+    return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+  }
 
-        const booking = await Booking.create({
-            userId,
-            adult,
-            child,
-            checkInDate,
-            checkOutDate
-        });
-    }catch (error) {
-        console.error("Error creating booking:", error);
-        res.status(500).json({ message: "Error creating booking." });
+  try {
+    let totalAmount = 0;
+    const bookingDataList = [];
+
+    for (const item of bookings) {
+      const {
+        accommodationId,
+        numberOfRooms,
+        adult,
+        child,
+        checkInDate,
+        checkOutDate,
+        pricePerNight
+      } = item;
+
+      if (!accommodationId || !checkInDate || !checkOutDate || !pricePerNight || !numberOfRooms) {
+        return res.status(400).json({ message: "ข้อมูลการจองไม่ครบถ้วน" });
+      }
+
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+      const totalNights = Math.ceil((checkOut - checkIn) / (1000 * 3600 * 24));
+      const totalPricePerBooking = totalNights * pricePerNight * numberOfRooms;
+
+      totalAmount += totalPricePerBooking;
+
+      // เก็บข้อมูลไว้ก่อน
+      bookingDataList.push({
+        userId,
+        accommodationId,
+        numberOfRooms,
+        adult,
+        child,
+        checkInDate,
+        checkOutDate,
+        paymentMethod,
+        totalNights,
+        totalPrice: totalPricePerBooking,
+        bookingStatus: "Pending",
+        due_Date: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      });
     }
-    finally {
-        res.status(201).json({ message: "Booking created successfully." });
-    }
-}
+
+    // สร้าง Payment รายการเดียว
+    const payment = await Payment.create({
+      user_id:userId,
+      method: paymentMethod,
+      amount: totalAmount,
+      status: "Pending",
+      due_Date: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
+
+    // สร้าง Booking ทั้งหมด และเชื่อมกับ paymentId
+    const bookingsCreated = await Promise.all(
+      bookingDataList.map(b => Booking.create({ ...b, paymentId: payment.id }))
+    );
+
+    res.status(201).json({
+      message: "สร้างการจองสำเร็จ",
+      payment,
+      bookings: bookingsCreated
+    });
+
+  } catch (error) {
+    console.error("Error creating multiple bookings:", error);
+    res.status(500).json({ message: "ไม่สามารถสร้างการจองได้" });
+  }
+};
+
+
+
 // exports.getAllBookings = async (req, res) => {
 //     try {
 //         const bookings = await Booking.findAll({
@@ -70,6 +129,7 @@ exports.receipt = async (req, res) => {
         { model: Accommodation, attributes: ["name", "price_per_night"] },
         {
           model: db.promotion,
+          attributes: ["percent"],
           through: { attributes: [] },
         },
       ],
@@ -80,37 +140,65 @@ exports.receipt = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบข้อมูลการจองของผู้ใช้นี้" });
     }
 
-    // สร้าง array ของใบเสร็จ
     const receipts = bookings.map((booking) => {
       const { user, accommodation, promotions } = booking;
+      const { adult, child, extraBed, doubleExtraBed, numberOfRooms, checkInDate, checkOutDate } = booking;
 
-      // คำนวณโปรโมชัน
+      // คำนวณจำนวนคืน
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+      const timeDiff = checkOut - checkIn;
+      const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+      // ราคาก่อนลด (คำนวณจากราคาห้องต่อคืน * จำนวนคืน * จำนวนห้อง)
+      const baseRoomPrice = accommodation.price_per_night;
+      const totalPrice = baseRoomPrice * nights * numberOfRooms;
+
+      // คำนวณส่วนลด
       let discount = 0;
       if (promotions.length > 0) {
         const promo = promotions[0];
-        if (promo && promo.discountPercent) {
-          discount = booking.totalPrice * (promo.discountPercent / 100);
+        if (promo && promo.percent) {
+          const discountPercent = parseFloat(promo.percent);
+          if (!isNaN(discountPercent)) {
+            discount = totalPrice * (discountPercent / 100);
+          }
         }
       }
 
-      // คำนวณค่าบวกเพิ่ม
+      // ค่าบวกเพิ่ม
       let extraCharge = 0;
-      if (booking.extraBed) extraCharge += 300;
-      if (booking.doubleExtraBed) extraCharge += 500;
+      let extraPersonCharge = 0;
 
-      const finalPrice = booking.totalPrice - discount + extraCharge;
+      if (adult === 1 && child === 3) {
+        extraPersonCharge += 749;
+      } else if (adult === 2 && child === 1) {
+        extraPersonCharge += 749;
+      } else if (adult === 3) {
+        extraPersonCharge += 1000;
+        if (child === 1) {
+          extraPersonCharge += 749;
+        }
+      }
+
+      if (extraBed) extraCharge += 200;
+      if (doubleExtraBed) extraCharge += 500;
+
+      extraCharge += extraPersonCharge;
+
+      const finalPrice = totalPrice - discount + extraCharge;
 
       return {
         customerName: `${user.name} ${user.lastname}`,
         email: user.email,
         phone: user.phone,
         bookingId: booking.id,
-        checkIn: booking.checkInDate,
-        checkOut: booking.checkOutDate,
-        paymentDate: booking.paymentDate,
-        adult: booking.adult,
-        child: booking.child,
-        totalPrice: booking.totalPrice,
+        checkIn,
+        checkOut,
+        nights,
+        numberOfRooms,
+        roomPricePerNight: baseRoomPrice,
+        totalPrice,
         discount,
         extraCharge,
         finalPrice,

@@ -2,6 +2,8 @@ const db = require("../models");
 const Sequelize = require("sequelize");
 const Booking = db.booking;
 const { Op } = require("sequelize");
+const Payment = db.payment;
+
 
 exports.getAllPayment = async (req, res) => {
   try {
@@ -23,27 +25,41 @@ exports.getAllPayment = async (req, res) => {
 };
 
 exports.confirmBookingPayment = async (req, res) => {
-    const id = req.params.id;
-    if (!id) {
-        return res.status(400).json({ message: "กรุณาระบุ ID การจอง" });
+    const paymentId = req.params.id;
+
+    if (!paymentId) {
+        return res.status(400).json({ message: "กรุณาระบุ Payment ID" });
     }
 
     try {
-        const booking = await Booking.findByPk(id);
-        if (!booking) {
-            return res.status(404).json({ message: "ไม่พบข้อมูลการจอง" });
+        // หา Payment ด้วย ID
+        const payment = await Payment.findByPk(paymentId, {
+            include: {
+                model: Booking,
+                as: "bookings"
+            }
+        });
+
+        if (!payment) {
+            return res.status(404).json({ message: "ไม่พบข้อมูลการชำระเงิน" });
         }
 
-        if (booking.bookingStatus === 'Paid') {
-            return res.status(400).json({ message: "รายการนี้ชำระเงินไปแล้ว" });
+        if (payment.paymentStatus === 'Paid') {
+            return res.status(400).json({ message: "ชำระเงินไปแล้ว" });
         }
 
-        booking.bookingStatus = 'Paid';
-        booking.paymentDate = new Date();
-        booking.due_Date = new Date();
-        await booking.save();
+        // อัปเดตสถานะการชำระเงิน
+        payment.paymentStatus = 'Paid';
+        await payment.save();
 
-        res.status(200).json({ message: "ยืนยันการชำระเงินสำเร็จ", booking });
+        // อัปเดตข้อมูลใน Booking ที่เชื่อมกับ Payment (ถ้ามี)
+        if (payment.booking) {
+            payment.booking.paymentDate = new Date();
+            payment.booking.due_Date = new Date();
+            await payment.booking.save();
+        }
+
+        res.status(200).json({ message: "ยืนยันการชำระเงินสำเร็จ", payment });
 
     } catch (error) {
         console.error("Error confirming payment:", error);
