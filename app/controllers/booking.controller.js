@@ -4,6 +4,7 @@ const Payment = db.payment;
 const User = db.user;
 const Accommodation = db.accommodation;
 const Promotion = db.promotion;
+const Receipt = db.receipt;
 
 
 // ใช้ req.body เพราะเป็น POST request
@@ -132,6 +133,10 @@ exports.receipt = async (req, res) => {
           attributes: ["percent"],
           through: { attributes: [] },
         },
+        {
+          model: db.type,
+          attributes: ["name"],
+        },
       ],
       order: [["paymentDate", "DESC"]],
     });
@@ -140,25 +145,42 @@ exports.receipt = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบข้อมูลการจองของผู้ใช้นี้" });
     }
 
-    const receipts = bookings.map((booking) => {
-      const { user, accommodation, promotions } = booking;
-      const { adult, child, extraBed, doubleExtraBed, numberOfRooms, checkInDate, checkOutDate } = booking;
+    // ✅ ดึง bookingId ที่มีใบเสร็จอยู่แล้ว
+    const existingReceipts = await Receipt.findAll({
+      where: { bookingId: bookings.map((b) => b.id) },
+      attributes: ["bookingId"],
+    });
 
-      // คำนวณจำนวนคืน
+    const existingBookingIds = new Set(existingReceipts.map((r) => r.bookingId));
+
+    const receiptsToCreate = [];
+
+    for (const booking of bookings) {
+      if (existingBookingIds.has(booking.id)) {
+        continue; // ข้ามถ้ามีใบเสร็จแล้ว
+      }
+
+      const { user, accommodation, promotions } = booking;
+      const {
+        adult,
+        child,
+        extraBed,
+        doubleExtraBed,
+        numberOfRooms,
+        checkInDate,
+        checkOutDate,
+      } = booking;
+
       const checkIn = new Date(checkInDate);
       const checkOut = new Date(checkOutDate);
-      const timeDiff = checkOut - checkIn;
-      const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-      // ราคาก่อนลด (คำนวณจากราคาห้องต่อคืน * จำนวนคืน * จำนวนห้อง)
+      const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
       const baseRoomPrice = accommodation.price_per_night;
       const totalPrice = baseRoomPrice * nights * numberOfRooms;
 
-      // คำนวณส่วนลด
       let discount = 0;
       if (promotions.length > 0) {
         const promo = promotions[0];
-        if (promo && promo.percent) {
+        if (promo?.percent) {
           const discountPercent = parseFloat(promo.percent);
           if (!isNaN(discountPercent)) {
             discount = totalPrice * (discountPercent / 100);
@@ -166,7 +188,6 @@ exports.receipt = async (req, res) => {
         }
       }
 
-      // ค่าบวกเพิ่ม
       let extraCharge = 0;
       let extraPersonCharge = 0;
 
@@ -188,13 +209,15 @@ exports.receipt = async (req, res) => {
 
       const finalPrice = totalPrice - discount + extraCharge;
 
-      return {
+      receiptsToCreate.push({
+        userId: userId,
         customerName: `${user.name} ${user.lastname}`,
         email: user.email,
         phone: user.phone,
         bookingId: booking.id,
         checkIn,
         checkOut,
+        accommodationName: accommodation.name,
         nights,
         numberOfRooms,
         roomPricePerNight: baseRoomPrice,
@@ -202,10 +225,20 @@ exports.receipt = async (req, res) => {
         discount,
         extraCharge,
         finalPrice,
-      };
-    });
+      });
+    }
 
-    res.status(200).json({ receipts });
+    if (receiptsToCreate.length > 0) {
+      await Receipt.bulkCreate(receiptsToCreate);
+    }
+
+    res.status(200).json({
+      message: receiptsToCreate.length > 0
+        ? "สร้างใบเสร็จใหม่สำเร็จ"
+        : "ไม่มีใบเสร็จใหม่ที่ต้องสร้าง (มีอยู่แล้วทั้งหมด)",
+      created: receiptsToCreate.length,
+      receipts: receiptsToCreate,
+    });
   } catch (error) {
     console.error("Error generating receipts:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดระหว่างสร้างใบเสร็จ" });

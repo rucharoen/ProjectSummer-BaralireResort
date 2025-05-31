@@ -31,6 +31,7 @@ db.activity = require("../models/activity.model")(sequelize, Sequelize);
 db.booking = require("../models/booking.model")(sequelize, Sequelize);
 db.payment = require("../models/payment.model")(sequelize, Sequelize);
 db.icon = require("../models/icon.model")(sequelize, Sequelize);
+db.receipt = require("../models/receipt.model")(sequelize, Sequelize);
 
 // many-to-many
 db.role.belongsToMany(db.user,{
@@ -117,5 +118,10 @@ db.booking.belongsTo(db.payment, {
   as: 'payment',
   foreignKey: 'paymentId'
 });
+
+// one to many
+db.user.hasMany(db.receipt, { foreignKey: "userId" });
+db.receipt.belongsTo(db.user, { foreignKey: "userId" });
+
 
 module.exports = db;
