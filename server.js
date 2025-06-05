@@ -15,13 +15,13 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-db.receipt.sync({ alter: true })
-    .then(() => {
-        console.log("Create table already.")
-    })
-    .catch((err) => {
-        console.log(err);
-    })
+// db.receipt.sync({ alter: true })
+//     .then(() => {
+//         console.log("Create table already.")
+//     })
+//     .catch((err) => {
+//         console.log(err);
+//     })
 
     
 
