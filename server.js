@@ -15,7 +15,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-// db.receipt.sync({ alter: true })
+// db.type.sync({ alter: true })
 //     .then(() => {
 //         console.log("Create table already.")
 //     })
