@@ -24,6 +24,34 @@ exports.getAllPayment = async (req, res) => {
   }
 };
 
+exports.getPaymentByUserId = async (req, res) => {
+    const userId = req.params.userId;
+    if (!userId) {
+        return res.status(400).json({ message: "กรุณาระบุ User ID" }); 
+    }
+
+    const payment = await Payment.findAll({
+    where: { user_id: userId, paymentStatus: 'Pending' },
+    include: [
+        {
+            model: Booking,
+            as: 'bookings', // Ensure alias matches your association definition
+            required: false,
+            include: [
+                {
+                    model: db.accommodation, // Ensure this model is defined in your models
+                    as: 'accommodation', // Use correct alias
+                    required: false // Set to true for INNER JOIN
+                }
+            ]
+        }
+    ],
+    order: [['id', 'DESC']]
+});
+    res.status(200).json(payment);
+
+
+}
 exports.confirmBookingPayment = async (req, res) => {
     const paymentId = req.params.id;
 

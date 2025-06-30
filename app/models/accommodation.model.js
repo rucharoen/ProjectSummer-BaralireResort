@@ -23,6 +23,13 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DECIMAL(10, 2),
             allowNull: false,
         },
+        
+        discount: {
+            type: Sequelize.INTEGER,
+            allowNull: true,
+            
+        },
+        
         amenities: {
             type: Sequelize.TEXT,
             allowNull: true,
@@ -34,6 +41,14 @@ module.exports = (sequelize, Sequelize) => {
         },
         
         image_name: {
+            type: Sequelize.STRING,
+            allowNull: true,
+        },
+        image_name2: {
+            type: Sequelize.STRING,
+            allowNull: true,
+        },
+        image_name3: {
             type: Sequelize.STRING,
             allowNull: true,
         },

@@ -32,6 +32,7 @@ db.booking = require("../models/booking.model")(sequelize, Sequelize);
 db.payment = require("../models/payment.model")(sequelize, Sequelize);
 db.icon = require("../models/icon.model")(sequelize, Sequelize);
 db.receipt = require("../models/receipt.model")(sequelize, Sequelize);
+db.award = require("../models/award.model")(sequelize, Sequelize);
 
 // many-to-many
 db.role.belongsToMany(db.user,{

@@ -52,6 +52,7 @@ exports.getSearch = async (req, res) => {
       };
     }
 
+    // ดึง accommodation พร้อม price_per_night และ discount
     const accommodations = await Accommodation.findAll({
       include: [includeCondition],
       attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -60,22 +61,32 @@ exports.getSearch = async (req, res) => {
       } : undefined
     });
 
+    // ดึง booking ที่ยัง active
     const bookings = await Booking.findAll({
-      where: {
-        [Op.or]: [
-          { bookingStatus: 'Paid' },
-          {
-            bookingStatus: 'Pending',
-            due_Date: { [Op.gte]: new Date() }
+      include: [
+        {
+          model: Payment,
+          as: 'payment',
+          required: true,
+          where: {
+            [Op.or]: [
+              { paymentStatus: 'Paid' },
+              {
+                paymentStatus: 'Pending',
+                due_Date: { [Op.gte]: new Date() }
+              }
+            ]
           }
-        ],
-        [Op.and]: [
-          { checkInDate: { [Op.lte]: parsedCheckOut } },
-          { checkOutDate: { [Op.gte]: parsedCheckIn } }
-        ]
+        }
+      ],
+      where: {
+        isCancelled: false,
+        checkInDate: { [Op.lte]: parsedCheckOut },
+        checkOutDate: { [Op.gte]: parsedCheckIn }
       }
     });
 
+    // นับจำนวนห้องที่ถูกจองต่อ accommodation
     const bookingCount = {};
     bookings.forEach(b => {
       const accId = b.accommodationId;
@@ -83,15 +94,23 @@ exports.getSearch = async (req, res) => {
       bookingCount[accId] = (bookingCount[accId] || 0) + roomsBooked;
     });
 
+    // คำนวณห้องว่างและราคาหลังส่วนลด
     const results = accommodations.map(acc => {
       const bookedRooms = bookingCount[acc.id] || 0;
       const availableRooms = acc.total_rooms - bookedRooms;
+
+      const discount = acc.discount ?? 0;
+      const pricePerNight = parseFloat(acc.price_per_night);
+      const priceAfterDiscount = pricePerNight - (pricePerNight * (discount / 100));
+
       return {
         ...acc.toJSON(),
-        availableRooms: availableRooms > 0 ? availableRooms : 0
+        availableRooms: availableRooms > 0 ? availableRooms : 0,
+        priceAfterDiscount: parseFloat(priceAfterDiscount.toFixed(2))
       };
     });
 
+    // กรองเฉพาะที่ยังว่าง (ถ้าระบุ)
     let finalResults = results;
     if (onlyAvailable === 'true') {
       finalResults = results.filter(acc => acc.availableRooms > 0);
@@ -103,8 +122,6 @@ exports.getSearch = async (req, res) => {
     res.status(500).json({ message: "Error searching accommodations" });
   }
 };
-
-
 
 
 
