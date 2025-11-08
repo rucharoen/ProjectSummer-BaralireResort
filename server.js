@@ -1,57 +1,61 @@
+// server.js
 const express = require("express");
-const app = express();
-const db = require("./app/models");
 const cors = require("cors");
 const path = require("path");
 require("dotenv/config");
-const cron = require("node-cron")
+
+process.env.TZ = process.env.TZ || "Asia/Bangkok";
+
+const cron = require("node-cron");
 const updateOverdue = require("./cron/updateOverdue");
+const db = require("./app/models"); // Sequelize index.js
+const promoRouter = require("./app/routes/promo");
 
+const app = express();
 
+/* ---------- Middlewares ---------- */
 app.use(cors({ origin: "*" }));
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Static uploads
+const UPLOADS_DIR = path.join(__dirname, "uploads");
+app.use("/uploads", express.static(UPLOADS_DIR));
+console.log("[static] serving:", UPLOADS_DIR);
 
-
-db.accommodation.sync({ alter: true })
-    .then(() => {
-        console.log("Create table already.")
-    })
-    .catch((err) => {
-        console.log(err);
-    })
-
-    
-
-db.sequelize.sync({ force: false }).then(() => {
-    console.log("Database sync...");
-});
-
-app.get("/", (req, res) => {
-    res.send("Hello World");
-    // console.log("Hello World");
-})
+/* ---------- Routes ---------- */
+app.use("/api/promo", promoRouter);
+app.get("/health", (req, res) => res.json({ ok: true }));
 
 require("./app/routes/auth.routes")(app);
 require("./app/routes/accommodation.routes")(app);
 require("./app/routes/activity.routes")(app);
 require("./app/routes/type.routes")(app);
 require("./app/routes/payment.routes")(app);
-require("./app/routes/booking.routes")(app);
 require("./app/routes/award.routes")(app);
+require("./app/routes/siteAsset.routes")(app);
+require("./app/routes/cart.routes")(app);
+require("./app/routes/user.routes")(app);
+require("./app/routes/booking.routes")(app);
 
+/* ---------- DB & Cron ---------- */
+db.sequelize
+  .sync({ alter: false })
+  .then(() => console.log("Database sync..."))
+  .catch((err) => console.error("DB sync error:", err));
 
+// เรียกครั้งแรกทันที (อัปเดตสถานะทันทีหลังบูต)
+updateOverdue();
 
-cron.schedule('* * * * *', () => {
-   updateOverdue();
-});
+// ตั้ง cron ทุก 1 นาที (ตั้ง timezone ให้ตรง)
+cron.schedule(
+  "* * * * *",
+  () => {
+    updateOverdue();
+  },
+  { timezone: "Asia/Bangkok" }
+);
 
-const mockReceipt = require('./app/routes/mockReceipt'); // ✅
-app.use('/', mockReceipt);
-
+/* ---------- Start server ---------- */
 const PORT = process.env.SERVER_PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
-});
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

@@ -1,8 +1,10 @@
 const controller = require("../controllers/payment.controller");
 
 module.exports = (app) => {
-    app.get("/api/payment", controller.getAllPayment);
-    app.get("/api/payment/:userId", controller.getPaymentByUserId);
-    // app.get("/api/payment/update-overdue", controller.updateOverdueBookings);
-    app.put("/api/bookings/payment/:id", controller.confirmBookingPayment);
-}
+  app.get("/api/payments", controller.getAllPayment);
+  app.get("/api/payments/user/:userId", controller.getPaymentByUserId);
+
+  app.post("/api/payments/:id/confirm", controller.confirmBookingPayment);
+  app.post("/api/payments/:id/cancel", controller.cancelPayment);
+  app.post("/api/payments/:id/fail", controller.failPayment);
+};

@@ -1,70 +1,61 @@
-module.exports = (sequelize, Sequelize) => {
-  const Receipt = sequelize.define("receipt", {
-    customerName: {
-      type: Sequelize.STRING,
-      allowNull: false,
+// app/models/receipt.model.js
+"use strict";
+
+module.exports = (sequelize, DataTypes) => {
+  const Receipt = sequelize.define(
+    "receipt",
+    {
+      id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+
+      // FK
+      userId:    { type: DataTypes.INTEGER, allowNull: false },
+      paymentId: { type: DataTypes.INTEGER, allowNull: false },
+      bookingId: { type: DataTypes.INTEGER, allowNull: true },
+
+      // ฟิลด์ที่มีอยู่จริงในตาราง (จากรูปที่ส่งมา)
+      customerName:        { type: DataTypes.STRING,  allowNull: false, defaultValue: "" },
+      email:               { type: DataTypes.STRING,  allowNull: true  },
+      phone:               { type: DataTypes.STRING,  allowNull: true  },
+
+      accommodationName:   { type: DataTypes.STRING,  allowNull: false, defaultValue: "" },
+
+      // *** สำคัญ: ตารางคุณบังคับ not null ที่ checkIn ***
+      checkIn:             { type: DataTypes.DATE,    allowNull: false }, // NOT NULL
+      checkOut:            { type: DataTypes.DATE,    allowNull: true  }, // ในตารางดูเหมือนไม่บังคับ not null
+
+      nights:              { type: DataTypes.INTEGER,       allowNull: false, defaultValue: 0 },
+      numberOfRooms:       { type: DataTypes.INTEGER,       allowNull: false, defaultValue: 0 },
+
+      // จากตารางมีคอลัมน์ roomPricePerNight
+      roomPricePerNight:   { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
+
+      totalPrice:          { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
+      discount:            { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
+      extraCharge:         { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
+      finalPrice:          { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
+
+      // คอลัมน์นี้มีอยู่ในตาราง (camelCase)
+      paymentStatus:       { type: DataTypes.STRING,        allowNull: false, defaultValue: "Pending" },
+
+      // ในสคีมาที่โชว์ไม่มี tax/address/note/receiptDate จึงไม่ใส่ เพื่อกัน mismatch
+      // timestamps (createdAt, updatedAt) ให้ Sequelize จัดการ
     },
-    email: {
-      type: Sequelize.STRING,
-      allowNull: false,
-    },
-    phone: {
-      type: Sequelize.STRING,
-      allowNull: false,
-    },
-    bookingId: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-    },
-    checkIn: {
-      type: Sequelize.DATEONLY,
-      allowNull: false,
-    },
-    checkOut: {
-      type: Sequelize.DATEONLY,
-      allowNull: false,
-    },
-    accommodationName: {
-      type: Sequelize.STRING,
-      allowNull: false,
-    },
-    nights: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-    },
-    numberOfRooms: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-    },
-    roomPricePerNight: {
-      type: Sequelize.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    totalPrice: {
-      type: Sequelize.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    discount: {
-      type: Sequelize.DECIMAL(10, 2),
-      defaultValue: 0.00,
-    },
-    extraCharge: {
-      type: Sequelize.DECIMAL(10, 2),
-      defaultValue: 0.00,
-    },
-    finalPrice: {
-      type: Sequelize.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    userId: {
-  type: Sequelize.INTEGER,
-  allowNull: false,
-  references: {
-    model: "users", // ชื่อตารางในฐานข้อมูล (ต้องตรง)
-    key: "id"
-  }
-}
-  });
+    {
+      tableName:  "receipts",
+      timestamps: true,
+      underscored: false,
+    }
+  );
+
+  Receipt.associate = (models) => {
+    const Payment = models.payment || models.Payment;
+    const Booking = models.booking || models.Booking;
+    const User    = models.user    || models.User;
+
+    Receipt.belongsTo(Payment, { as: "payment", foreignKey: "paymentId" });
+    Receipt.belongsTo(Booking, { as: "booking", foreignKey: "bookingId" });
+    Receipt.belongsTo(User,    { as: "user",    foreignKey: "userId" });
+  };
 
   return Receipt;
 };

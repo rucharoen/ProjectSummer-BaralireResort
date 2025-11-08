@@ -1,92 +1,85 @@
+// app/controllers/accommodation.controller.js
 const db = require("../models");
-const Sequelize = require("sequelize");
+const { Op, fn, col } = require("sequelize");
 
-const Accommodation = db.accommodation;
-const Type = db.type;
-const User = db.user;
-const Booking = db.booking;
-const Promotion = db.promotion;
-const { Op } = require("sequelize");
-const Payment = db.payment;
+// ใช้คีย์ตัวเล็กจาก db/index.js (ถ้ามีตัวใหญ่ก็ fallback ให้)
+const Accommodation = db.accommodation || db.Accommodation;
+const Type          = db.type          || db.Type;
+const User          = db.user          || db.User;
+const Booking       = db.booking       || db.Booking;
+const Promotion     = db.promotion     || db.Promotion;
+const Payment       = db.payment       || db.Payment;
+const RatePlan      = db.ratePlan      || db.RatePlan;
 
-exports.getAll = async (req, res) => {
-    try {
-        const accommodation = await Accommodation.findAll({
-            include: [
-                {
-                    model: Type,
-                    attributes: ["name"]
-                }
-            ],
-            order: [['id', 'ASC']],
-            // limit: 2
-        });
-        res.status(200).json(accommodation);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching accommodations" });
-    }
-}
+/* =========================
+   GET /api/accommodation
+========================= */
+exports.getAll = async (_req, res) => {
+  try {
+    const rows = await Accommodation.findAll({
+      include: [{ model: Type, attributes: ["name"] }],
+      order: [["id", "ASC"]],
+    });
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("getAll error:", err);
+    res.status(500).json({ message: "Error fetching accommodations" });
+  }
+};
 
-
-
+/* ==========================================
+   GET /api/accommodation/search
+   ?destination=&guests=&checkIn=&checkOut=&onlyAvailable=true
+========================================== */
 exports.getSearch = async (req, res) => {
   try {
     const { destination, guests, checkIn, checkOut, onlyAvailable } = req.query;
-
     if (!checkIn || !checkOut) {
-      return res.status(400).json({ message: "Please provide checkIn and checkOut dates." });
+      return res
+        .status(400)
+        .json({ message: "Please provide checkIn and checkOut dates." });
     }
 
-    const parsedCheckIn = new Date(checkIn);
+    const parsedCheckIn  = new Date(checkIn);
     const parsedCheckOut = new Date(checkOut);
 
     const includeCondition = {
       model: Type,
       attributes: ["id", "name"],
-      required: true
+      required: true,
     };
-
     if (destination && destination !== "ทั้งหมด" && destination.toLowerCase() !== "all") {
-      includeCondition.where = {
-        name: { [Op.like]: `${destination}%` }
-      };
+      includeCondition.where = { name: { [Op.like]: `${destination}%` } };
     }
 
-    // ดึง accommodation พร้อม price_per_night และ discount
     const accommodations = await Accommodation.findAll({
       include: [includeCondition],
-      attributes: { exclude: ['createdAt', 'updatedAt'] },
-      where: guests ? {
-        capacity: { [Op.gte]: parseInt(guests) }
-      } : undefined
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+      where: guests ? { capacity: { [Op.gte]: parseInt(guests, 10) } } : undefined,
+      order: [["id", "ASC"]],
     });
 
-    // ดึง booking ที่ยัง active
+    // หา booking ที่ชนกับช่วงวันและยัง active (จ่ายแล้ว หรือ pending แต่ยังไม่พ้นกำหนด)
     const bookings = await Booking.findAll({
-      include: [
-        {
-          model: Payment,
-          as: 'payment',
-          required: true,
-          where: {
-            [Op.or]: [
-              { paymentStatus: 'Paid' },
-              {
-                paymentStatus: 'Pending',
-                due_Date: { [Op.gte]: new Date() }
-              }
-            ]
-          }
-        }
-      ],
+      include: [{
+        model: Payment,
+        as: "payment",
+        required: true,
+        where: {
+          [Op.or]: [
+            { paymentStatus: "Paid" },
+            { paymentStatus: "Pending", due_Date: { [Op.gte]: new Date() } },
+          ],
+        },
+      }],
       where: {
         isCancelled: false,
-        checkInDate: { [Op.lte]: parsedCheckOut },
-        checkOutDate: { [Op.gte]: parsedCheckIn }
-      }
+        checkInDate:  { [Op.lte]: parsedCheckOut },
+        checkOutDate: { [Op.gte]: parsedCheckIn },
+      },
     });
 
-    // นับจำนวนห้องที่ถูกจองต่อ accommodation
+    // รวมจำนวนห้องที่ถูกจองต่อ accommodation
     const bookingCount = {};
     bookings.forEach(b => {
       const accId = b.accommodationId;
@@ -94,294 +87,244 @@ exports.getSearch = async (req, res) => {
       bookingCount[accId] = (bookingCount[accId] || 0) + roomsBooked;
     });
 
-    // คำนวณห้องว่างและราคาหลังส่วนลด
     const results = accommodations.map(acc => {
-      const bookedRooms = bookingCount[acc.id] || 0;
-      const availableRooms = acc.total_rooms - bookedRooms;
+      const bookedRooms    = bookingCount[acc.id] || 0;
+      const availableRooms = Math.max((acc.total_rooms || 0) - bookedRooms, 0);
 
-      const discount = acc.discount ?? 0;
-      const pricePerNight = parseFloat(acc.price_per_night);
-      const priceAfterDiscount = pricePerNight - (pricePerNight * (discount / 100));
+      const discount        = acc.discount ?? 0;
+      const pricePerNight   = Number(acc.price_per_night || 0);
+      const priceAfterDisc  = pricePerNight * (1 - discount / 100);
 
       return {
         ...acc.toJSON(),
-        availableRooms: availableRooms > 0 ? availableRooms : 0,
-        priceAfterDiscount: parseFloat(priceAfterDiscount.toFixed(2))
+        availableRooms,
+        priceAfterDiscount: Number(priceAfterDisc.toFixed(2)),
       };
     });
 
-    // กรองเฉพาะที่ยังว่าง (ถ้าระบุ)
-    let finalResults = results;
-    if (onlyAvailable === 'true') {
-      finalResults = results.filter(acc => acc.availableRooms > 0);
-    }
+    const finalResults = (onlyAvailable === "true")
+      ? results.filter(acc => acc.availableRooms > 0)
+      : results;
 
     res.status(200).json(finalResults);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("getSearch error:", err);
     res.status(500).json({ message: "Error searching accommodations" });
   }
 };
 
-
-
-exports.getAllBookings = async (req, res) => {
+/* ====================================
+   GET /api/accommodation/booking
+==================================== */
+exports.getAllBookings = async (_req, res) => {
   try {
-    const bookings = await Booking.findAll({
+    const rows = await Booking.findAll({
       attributes: [
-        'adult',
-        'child',
-        'checkInDate',
-        'checkOutDate',
-        'totalNights',
-        'totalPrice',
-        'extraBed',
-        'doubleExtraBed',
-        'numberOfRooms'
+        "adult",
+        "child",
+        "checkInDate",
+        "checkOutDate",
+        "totalNights",
+        "totalPrice",
+        "extraBed",
+        "doubleExtraBed",
+        "numberOfRooms",
       ],
       include: [
-        {
-          model: Accommodation,
-          attributes: ['name']
-        },
-        {
-          model: User,
-          attributes: ['name', 'lastname', 'email']
-        },
-        {
-          model: Promotion,
-          attributes: ['percent'],
-          through: { attributes: [] }
-        }
+        { model: Accommodation, attributes: ["name"] },
+        { model: User, attributes: ["name", "lastname", "email"] },
+        { model: Promotion, attributes: ["percent"], through: { attributes: [] } },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
-    const bookingsWithUpdatedPrice = bookings.map(booking => {
-      const adult = booking.adult;
-      const child = booking.child;
+    const enriched = rows.map(booking => {
+      const adult  = booking.adult;
+      const child  = booking.child;
       const nights = booking.totalNights;
-      const basePrice = booking.totalPrice;
+      const basePrice = Number(booking.totalPrice || 0);
       const promotion = booking.promotions?.[0];
-      const percent = promotion?.percent || 0;
+      const percent   = promotion?.percent || 0;
       const numberOfRooms = booking.numberOfRooms || 1;
 
-      const roomPriceTotal = basePrice * nights * numberOfRooms;
+      const roomPriceTotal      = basePrice * nights * numberOfRooms;
       const discountedRoomPrice = roomPriceTotal * (1 - percent / 100);
 
       let extraPersonCharge = 0;
-      let extraBedCharge = 0;
-      let doubleExtraBedCharge = 0;
+      let extraBedCharge    = booking.extraBed ? 200 : 0;
+      let doubleExtraBedCharge = booking.doubleExtraBed ? 500 : 0;
 
       if (adult === 1) {
-        if (child > 3) {
-          return {
-            ...booking.toJSON(),
-            error: "ไม่สามารถมีเด็กมากกว่า 3 คนได้ถ้ามีผู้ใหญ่เพียง 1 คน"
-          };
-        } else if (child === 3) {
-          extraPersonCharge += 749;
-        }
+        if (child > 3) return { ...booking.toJSON(), error: "ไม่สามารถมีเด็กมากกว่า 3 คนได้ถ้ามีผู้ใหญ่เพียง 1 คน" };
+        if (child === 3) extraPersonCharge += 749;
       } else if (adult === 2) {
-        if (child > 1) {
-          return {
-            ...booking.toJSON(),
-            error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 2 คน"
-          };
-        } else if (child === 1) {
-          extraPersonCharge += 749;
-        }
+        if (child > 1) return { ...booking.toJSON(), error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 2 คน" };
+        if (child === 1) extraPersonCharge += 749;
       } else if (adult === 3) {
-        if (child > 1) {
-          return {
-            ...booking.toJSON(),
-            error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 3 คน"
-          };
-        } else {
-          extraPersonCharge += 1000;
-          if (child === 1) {
-            extraPersonCharge += 749;
-          }
-        }
+        if (child > 1) return { ...booking.toJSON(), error: "ไม่สามารถมีเด็กมากกว่า 1 คนได้ถ้ามีผู้ใหญ่ 3 คน" };
+        extraPersonCharge += 1000;
+        if (child === 1) extraPersonCharge += 749;
       } else if (adult > 3) {
-        return {
-          ...booking.toJSON(),
-          error: "ไม่สามารถมีผู้ใหญ่เกิน 3 คนต่อห้องได้"
-        };
-      }
-
-      if (booking.extraBed) {
-        extraBedCharge = 200;
-      }
-      if (booking.doubleExtraBed) {
-        doubleExtraBedCharge = 500;
+        return { ...booking.toJSON(), error: "ไม่สามารถมีผู้ใหญ่เกิน 3 คนต่อห้องได้" };
       }
 
       const extraCharge = extraPersonCharge + extraBedCharge + doubleExtraBedCharge;
-      const finalPrice = discountedRoomPrice + extraCharge;
+      const finalPrice  = discountedRoomPrice + extraCharge;
 
       return {
         ...booking.toJSON(),
-        roomPriceTotal: roomPriceTotal.toFixed(2),
+        roomPriceTotal:      roomPriceTotal.toFixed(2),
         discountedRoomPrice: discountedRoomPrice.toFixed(2),
         extraCharge,
-        extraDetails: {
-          extraPersonCharge,
-          extraBedCharge,
-          doubleExtraBedCharge
-        },
+        extraDetails: { extraPersonCharge, extraBedCharge, doubleExtraBedCharge },
         discountPercent: percent,
-        finalPrice: finalPrice.toFixed(2)
+        finalPrice:        finalPrice.toFixed(2),
       };
     });
 
-    res.status(200).json(bookingsWithUpdatedPrice);
+    res.status(200).json(enriched);
   } catch (err) {
     console.error("Error fetching bookings:", err);
     res.status(500).json({ message: "Error retrieving bookings." });
   }
 };
 
-
-
-exports.getAllPromotion = async (req, res) => {
-    try {
-        const promotions = await db.promotion.findAll({
-            attributes: [
-                'id',
-                'condition',
-                'percent',
-                'period',
-                'description'
-            ],
-            include: [
-                {
-                    model: Type,
-                    attributes: [
-                        
-                        'name',
-                        'details'
-                    ]
-                },
-            ]
-        });
-
-    //     const bookedCountByAccommodation = {};
-    //   promotions.forEach(booking => {
-    //   const accommodationId = booking.accommodationId;
-    //   const amount = 1; // สมมุติ 1 booking = 1 ห้อง ถ้ามีฟิลด์จำนวนใน booking ให้แก้ตรงนี้
-
-    //   if (!bookedCountByAccommodation[accommodationId]) {
-    //     bookedCountByAccommodation[accommodationId] = 0;
-    //   }
-
-    //   bookedCountByAccommodation[accommodationId] += amount;
-    // });
-
-    // // สร้างข้อมูล availability โดยเพิ่ม bookedRooms และ availableRooms
-    // const availability = promotions.map(acc => {
-    //   const bookedRooms = bookedCountByAccommodation[acc.id] || 0;
-    //   const totalRooms = acc.total_rooms || 0;
-    //   const availableRooms = totalRooms - bookedRooms;
-    // });
-        res.status(200).json(promotions); // ส่งข้อมูลกลับเป็น JSON
-    } catch (error) {
-        console.error("Error fetching promotions:", error);
-        res.status(500).json({ message: "ไม่สามารถดึงข้อมูลโปรโมชั่นได้" });
-    }
+/* ============================================
+   GET /api/accommodation/promotion
+============================================ */
+exports.getAllPromotion = async (_req, res) => {
+  try {
+    const rows = await Promotion.findAll({
+      attributes: ["id", "condition", "percent", "period", "description"],
+      include: [{ model: Type, attributes: ["name", "details"] }],
+    });
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching promotions:", err);
+    res.status(500).json({ message: "ไม่สามารถดึงข้อมูลโปรโมชั่นได้" });
+  }
 };
 
-
+/* =========================================================
+   GET /api/accommodation/availableroom?checkIn=&checkOut=
+========================================================= */
 exports.getAvailability = async (req, res) => {
-  const { checkIn, checkOut } = req.query;
-  const parsedCheckIn = new Date(checkIn);
-  const parsedCheckOut = new Date(checkOut);
-  const now = new Date();
-
   try {
+    const { checkIn, checkOut } = req.query;
+    const parsedCheckIn  = new Date(checkIn);
+    const parsedCheckOut = new Date(checkOut);
+    const now = new Date();
+
     const accommodations = await Accommodation.findAll();
 
     const bookings = await Booking.findAll({
-      include: [
-        {
-          model: Payment,
-          as: 'payment',
-          where: {
-            [Op.or]: [
-              { paymentStatus: 'Paid' },
-              {
-                paymentStatus: 'Pending',
-                due_Date: { [Op.gte]: now }
-              }
-            ]
-          },
-          required: true
-        }
-      ],
+      include: [{
+        model: Payment,
+        as: "payment",
+        required: true,
+        where: {
+          [Op.or]: [
+            { paymentStatus: "Paid" },
+            { paymentStatus: "Pending", due_Date: { [Op.gte]: now } },
+          ],
+        },
+      }],
       where: {
         [Op.and]: [
-          { checkInDate: { [Op.lte]: parsedCheckOut } },
-          { checkOutDate: { [Op.gte]: parsedCheckIn } }
-        ]
-      }
+          { checkInDate:  { [Op.lte]: parsedCheckOut } },
+          { checkOutDate: { [Op.gte]: parsedCheckIn } },
+        ],
+        isCancelled: false,
+      },
     });
 
     const bookedCountByAccommodation = {};
-    bookings.forEach(booking => {
-      const accommodationId = booking.accommodationId;
-      const amount = booking.numberOfRooms || 1;
-      bookedCountByAccommodation[accommodationId] = (bookedCountByAccommodation[accommodationId] || 0) + amount;
+    bookings.forEach(b => {
+      const accId = b.accommodationId;
+      const amount = b.numberOfRooms || 1;
+      bookedCountByAccommodation[accId] = (bookedCountByAccommodation[accId] || 0) + amount;
     });
 
     const availability = accommodations.map(acc => {
-      const bookedRooms = bookedCountByAccommodation[acc.id] || 0;
-      const totalRooms = acc.total_rooms || 0;
-      const availableRooms = totalRooms - bookedRooms;
-
+      const bookedRooms    = bookedCountByAccommodation[acc.id] || 0;
+      const totalRooms     = acc.total_rooms || 0;
+      const availableRooms = Math.max(totalRooms - bookedRooms, 0);
       return {
         accommodationName: acc.name,
         total_rooms: totalRooms,
         bookedRooms,
-        availableRooms: availableRooms >= 0 ? availableRooms : 0
+        availableRooms,
       };
     });
 
-    res.status(200).json({
-      success: true,
-      data: availability
-    });
-  } catch (error) {
-    console.error("Error in getAvailability:", error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+    res.status(200).json({ success: true, data: availability });
+  } catch (err) {
+    console.error("getAvailability error:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
+/* =======================================================
+   GET /api/accommodation/:id/rating
+======================================================= */
 exports.getAccommodationRating = async (req, res) => {
-  const accommodationId = req.params.id;
-
   try {
+    const accommodationId = req.params.id;
     const result = await Booking.findOne({
       attributes: [
-        [Sequelize.fn("AVG", Sequelize.col("checkOutRating")), "avgRating"],
-        [Sequelize.fn("COUNT", Sequelize.col("checkOutRating")), "totalReviews"],
+        [fn("AVG", col("checkOutRating")), "avgRating"],
+        [fn("COUNT", col("checkOutRating")), "totalReviews"],
       ],
       where: {
         accommodationId,
-        checkOutRating: {
-          [Sequelize.Op.not]: null,
-        }
-      }
+        checkOutRating: { [Op.not]: null },
+      },
     });
 
-    const avgRating = parseFloat(result.dataValues.avgRating).toFixed(1);
-    const totalReviews = parseInt(result.dataValues.totalReviews);
+    const avgRating    = Number(result?.dataValues?.avgRating || 0).toFixed(1);
+    const totalReviews = parseInt(result?.dataValues?.totalReviews || 0, 10);
 
     res.json({ avgRating, totalReviews });
   } catch (err) {
-    console.error(err);
+    console.error("getAccommodationRating error:", err);
     res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงคะแนน" });
   }
-}
+};
+
+exports.getWithRates = async (req, res) => {
+  try {
+    const rooms = await db.accommodation.findAll({
+      include: [{
+        association: db.accommodation.associations.ratePlans,   // ← อ้างตรงๆ
+        attributes: ["id", "name", "price_per_night", "accommodation_id"],
+        required: false,
+      }],
+      order: [["id", "ASC"]],
+    });
+
+    res.json(rooms);
+  } catch (err) {
+    console.error("getWithRates error:", err); // ให้เห็น error จริงใน terminal
+    res.status(500).json({ message: err.message, stack: err.stack });
+  }
+};
+
+
+
+/* =======================================================
+   GET /api/accommodation/with-rates-lite
+   แบบเบา ไม่กรอง ไม่เรียงเรทราคา
+======================================================= */
+exports.listWithRates = async (_req, res) => {
+  try {
+    const rows = await Accommodation.findAll({
+      attributes: ["id", "name"],
+      include: [{ model: RatePlan, as: "ratePlans", required: false, attributes: ["id", "name", "price_per_night"] }],
+      order: [["id", "ASC"]],
+    });
+    res.json(rows);
+  } catch (err) {
+    console.error("listWithRates error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};

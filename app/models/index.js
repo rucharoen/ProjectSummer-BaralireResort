@@ -2,127 +2,82 @@ const config = require('../config/db.config');
 const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize(
-    config.DB, 
-    config.USER, 
-    config.PASSWORD, 
-    {
-        host:config.HOST,
-        dialect:config.DIALECT, 
-        pool:{
-            max:config.pool.max,
-            min:config.pool.min,
-            acquire:config.pool.acquire,
-            idle:config.pool.idle
-        }
+  config.DB,
+  config.USER,
+  config.PASSWORD,
+  {
+    host: config.HOST,
+    dialect: config.DIALECT,
+    pool: {
+      max: config.pool.max,
+      min: config.pool.min,
+      acquire: config.pool.acquire,
+      idle: config.pool.idle
     }
+  }
 );
 
 const db = {};
 db.Sequelize = Sequelize;
-db.sequelize = sequelize; 
+db.sequelize = sequelize;
 
-db.user = require("../models/user.model")(sequelize, Sequelize);
-db.role = require("../models/role.model")(sequelize, Sequelize);
-//db.user_roles = require("../models/user.roles.models")(sequelize, Sequelize);
-db.type = require("../models/type.model")(sequelize, Sequelize);
-db.accommodation = require("../models/accommodation.model")(sequelize, Sequelize);
-db.promotion = require("../models/promotion")(sequelize, Sequelize);
-db.activity = require("../models/activity.model")(sequelize, Sequelize);
-db.booking = require("../models/booking.model")(sequelize, Sequelize);
-db.payment = require("../models/payment.model")(sequelize, Sequelize);
-db.icon = require("../models/icon.model")(sequelize, Sequelize);
-db.receipt = require("../models/receipt.model")(sequelize, Sequelize);
-db.award = require("../models/award.model")(sequelize, Sequelize);
+db.user          = require("./user.model")(sequelize, Sequelize);
+db.role          = require("./role.model")(sequelize, Sequelize);
+db.type          = require("./type.model")(sequelize, Sequelize);
+db.accommodation = require("./accommodation.model")(sequelize, Sequelize);
+db.promotion     = require("./promotion")(sequelize, Sequelize);
+db.activity      = require("./activity.model")(sequelize, Sequelize);
+db.booking       = require("./booking.model")(sequelize, Sequelize);
+db.payment       = require("./payment.model")(sequelize, Sequelize);
+db.icon          = require("./icon.model")(sequelize, Sequelize);
+db.receipt       = require("./receipt.model")(sequelize, Sequelize);
+db.award         = require("./award.model")(sequelize, Sequelize);
+db.ratePlan      = require("./ratePlan.model")(sequelize, Sequelize);
+db.siteAsset     = require("./siteAsset.model")(sequelize, Sequelize); 
+db.cart          = require("./cart.model")(sequelize, Sequelize);
 
-// many-to-many
-db.role.belongsToMany(db.user,{
-    through: "user_roles"
-});
-db.user.belongsToMany(db.role,{
-    through: "user_roles"
-});
-// One-to-many
-db.type.hasMany(db.accommodation,{
-    foreignKey: "type_id",
-    onDelete: "CASCADE"
-});
-db.accommodation.belongsTo(db.type,{
-     foreignKey: "type_id"
-});
+// ... บรรทัด require โมเดลทั้งหมดยังคงเดิม ...
 
-// One-to-many  ตารางโปโมชั่น กับ ไทด์
-db.type.hasMany(db.promotion,{
-    foreignKey: "type_id",
-    onDelete: "CASCADE"
-});
-db.promotion.belongsTo(db.type, {
-    foreignKey: "type_id"
-});
+// ===== User / Role =====
+db.user.belongsToMany(db.role, { through: "user_roles", foreignKey: "userId", otherKey: "roleId" });
+db.role.belongsToMany(db.user, { through: "user_roles", foreignKey: "roleId", otherKey: "userId" });
 
+// ===== Type / Accommodation / Promotion =====
+db.type.hasMany(db.accommodation, { foreignKey: "type_id", onDelete: "CASCADE" });
+db.accommodation.belongsTo(db.type, { foreignKey: "type_id" });
 
-// One-to-Many
-db.user.hasMany(db.booking, {
-    foreignKey: "userId",
-    onDelete: "RESTRICT"
-});
+db.type.hasMany(db.promotion, { foreignKey: "type_id", onDelete: "CASCADE" });
+db.promotion.belongsTo(db.type, { foreignKey: "type_id" });
 
-db.booking.belongsTo(db.user, {
-    foreignKey: "userId"
-});
+// ===== Booking relations =====
+db.user.hasMany(db.booking, { foreignKey: "userId", onDelete: "RESTRICT" });
+db.booking.belongsTo(db.user, { foreignKey: "userId" });
 
-// One-to-Many: accommodation → booking
-db.accommodation.hasMany(db.booking, {
-    foreignKey: "accommodationId",
-    onDelete: "RESTRICT"
-});
+db.accommodation.hasMany(db.booking, { foreignKey: "accommodationId", onDelete: "RESTRICT" });
+db.booking.belongsTo(db.accommodation, { foreignKey: "accommodationId" });
 
-// ❗ ฝั่งกลับ booking → accommodation
-db.booking.belongsTo(db.accommodation, {
-    foreignKey: "accommodationId"
-});
+db.booking.belongsToMany(db.type, { through: "booking_types", foreignKey: "booking_id", otherKey: "type_id" });
+db.type.belongsToMany(db.booking, { through: "booking_types", foreignKey: "type_id", otherKey: "booking_id" });
 
-// One-to-Many: accommodation → booking
-db.accommodation.hasMany(db.booking, {
-    foreignKey: "accommodationId",
-    onDelete: "RESTRICT"
-});
+db.booking.belongsToMany(db.promotion, { through: "booking_promotions", foreignKey: "booking_id", otherKey: "promotion_id" });
+db.promotion.belongsToMany(db.booking, { through: "booking_promotions", foreignKey: "promotion_id", otherKey: "booking_id" });
 
-// ฝั่งกลับ: booking → belongsTo accommodation
-db.booking.belongsTo(db.accommodation, {
-    foreignKey: "accommodationId"
-});
+// ===== Payment ↔ Booking =====
+db.payment.hasMany(db.booking, { as: "bookings", foreignKey: "paymentId" });
+db.booking.belongsTo(db.payment, { as: "payment", foreignKey: "paymentId" });
 
-//many to many
-db.booking.belongsToMany(db.type,{
-    through: "type_id"
-});
-db.type.belongsToMany(db.booking,{
-    through: "type_id"
-});
+// ===== Receipt relations (เพิ่มส่วนนี้) =====
+db.user.hasMany(db.receipt,    { as: "receipts",  foreignKey: "userId" });
+db.receipt.belongsTo(db.user,  { as: "user",      foreignKey: "userId" });
 
-//many to many
-db.booking.belongsToMany(db.promotion,{
-    through: "type_promo"
-});
-db.promotion.belongsToMany(db.booking,{
-    through: "type_promo"
-});
+db.payment.hasMany(db.receipt, { as: "receipts",  foreignKey: "paymentId" });
+db.receipt.belongsTo(db.payment,{ as: "payment",  foreignKey: "paymentId" });
 
-// Payment hasMany Bookings
-db.payment.hasMany(db.booking, {
-  as: 'bookings',
-  foreignKey: 'paymentId'
-});
- 
-// Booking belongsTo Payment
-db.booking.belongsTo(db.payment, {
-  as: 'payment',
-  foreignKey: 'paymentId'
-});
+db.booking.hasMany(db.receipt, { as: "receipts",  foreignKey: "bookingId" });
+db.receipt.belongsTo(db.booking,{ as: "booking",  foreignKey: "bookingId" });
 
-// one to many
-db.user.hasMany(db.receipt, { foreignKey: "userId" });
-db.receipt.belongsTo(db.user, { foreignKey: "userId" });
-
+// ===== RatePlan =====
+db.accommodation.hasMany(db.ratePlan, { foreignKey: 'accommodation_id', as: 'ratePlans' });
+db.ratePlan.belongsTo(db.accommodation, { foreignKey: 'accommodation_id', as: 'accommodation' });
 
 module.exports = db;
