@@ -1,0 +1,139 @@
+:root { --nav-h: 64px; }
+
+.main-navbar { background: #f5f6f7; position: relative; z-index: 1060; }
+.navbar-inner { display: grid; grid-template-columns: auto 1fr; align-items: center; min-height: var(--nav-h); }
+.brand-logo { display: block; }
+
+.primary-nav {
+  display: flex; gap: clamp(16px, 4vw, 48px);
+  margin: 0; padding: 0; list-style: none; align-items: center;
+  margin-left: clamp(8px, 2vw, 24px);
+}
+.nav-link-btn { background: none; border: 0; padding: 8px 2px; font-size: 1rem; color: #111; cursor: pointer; }
+.nav-link-btn:focus-visible { outline: 2px solid #22a7d7; outline-offset: 2px; }
+
+.right-rail { gap: 12px; display: flex; align-items: center; }
+
+/* ===== รถเข็น + badge ===== */
+button.btn-cart { background: none; border: none; color: #333; position: relative; line-height: 0; }
+.cart-btn-wrap { padding: 4px; border-radius: 10px; }
+.cart-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  background: #e11900; color: #fff; font-size: 12px; font-weight: 800;
+  line-height: 20px; text-align: center; border-radius: 999px;
+  box-shadow: 0 0 0 2px #f5f6f7;
+}
+
+/* ===== ชิปภาษา/สกุลเงิน ===== */
+.lang-chip { display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; user-select: none; }
+.lang-chip .flag { display: block; border-radius: 3px; }
+.lang-chip .lang-text { font-weight: 600; color: #171a1c; letter-spacing: .2px; }
+.lang-chip.mobile { padding: 6px 10px; }
+
+/* ===== ผู้ใช้: chip + dropdown ===== */
+.user-chip-wrap { position: relative; }
+.user-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #e6e8ea; border-radius: 999px;
+  padding: 6px 10px; cursor: pointer;
+}
+.user-chip:hover { background: #fff; }
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+  background: #f0f2f4; display: inline-flex; align-items: center; justify-content: center;
+}
+.user-avatar-fallback { border: 1px solid #dfe3e6; color: #222; }
+.user-name {
+  max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 600; color: #171a1c;
+}
+.user-chip .chev { opacity: .7; }
+.user-menu {
+  position: absolute; right: 0; top: calc(100% + 8px);
+  width: 220px; background: #fff; border: 1px solid #e6e8ea; border-radius: 12px;
+  box-shadow: 0 12px 24px rgba(0,0,0,.10); padding: 6px; z-index: 1100;
+}
+.user-menu-item {
+  width: 100%; text-align: left; background: none; border: 0;
+  display: flex; align-items: center; gap: 10px; padding: 10px 10px;
+  border-radius: 8px; color: #171a1c; font-weight: 600;
+}
+.user-menu-item:hover { background: #f4f6f8; }
+.user-menu-item.danger { color: #b42318; }
+.user-menu-sep { height: 1px; background: #eef1f3; margin: 4px 6px; }
+
+/* ===== ปุ่ม Login ===== */
+.btn-login { border-radius: 9px; padding: 10px 16px; font-weight: 700; transition: background .15s, border .15s; background:#22a7d7; color:#fff; }
+.btn-login:hover { filter: brightness(0.95); }
+
+.custom-burger { border: none; padding: 8px; }
+
+/* ===================== Mobile Drawer ===================== */
+@media (max-width: 991.98px) {
+  .drawer-layer { position: fixed; left: 0; right: 0; top: calc(var(--nav-h) + 20px); bottom: 0; pointer-events: none; z-index: 1050; }
+  .drawer-layer.is-open { pointer-events: auto; }
+  .drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.35); border: 0; padding: 0; opacity: 0; transition: opacity .25s; }
+  .drawer-layer.is-open .drawer-backdrop { opacity: 1; }
+
+  .drawer {
+    position: absolute; left: 0; right: 0; top: 0; background: #fff;
+    border-radius: 0 0 12px 12px; box-shadow: 0 8px 28px rgba(0,0,0,.12);
+    transform: translateY(-18px); opacity: 0; transition: transform .28s, opacity .28s;
+    max-height: min(680px, calc(100dvh - 16px)); overflow: auto; padding: 12px 12px 56px;
+    will-change: transform, opacity;
+  }
+  .drawer.slide-in { opacity: 1; transform: translateY(0); }
+  .drawer.slide-out { transform: translateY(-18px); opacity: 0; }
+
+  .btn-mobile-full { display: block; width: 100%; padding: 12px 16px; border-radius: 10px; font-weight: 800; margin-bottom: 8px; }
+
+  .drawer-menu { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+  .drawer-link { width: 100%; text-align: left; background: transparent; border: 0; padding: 8px 4px; font-size: 1.05rem; color: #111; }
+
+  /* ส่วนผู้ใช้ใน Drawer */
+  .drawer-user { display: flex; align-items: center; gap: 12px; padding: 6px 4px 4px; }
+  .drawer-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #f0f2f4; }
+  .drawer-avatar-fallback { border: 1px solid #dfe3e6; display: inline-flex; align-items: center; justify-content: center; }
+  .drawer-user-meta { display: flex; flex-direction: column; }
+  .drawer-user-name { font-weight: 700; }
+  .drawer-user-role { font-size: .85rem; color: #667085; }
+  .drawer-actions { display: flex; gap: 8px; margin: 10px 0 6px; }
+  .drawer-action {
+    flex: 1; display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+    background: #fff; border: 1px solid #e6e8ea; padding: 8px 10px; border-radius: 10px; font-weight: 700;
+  }
+  .drawer-action:hover { background: #f8f9fb; }
+  .drawer-action.danger { color: #b42318; border-color: #f1c1bd; }
+
+  .drawer-lang-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 4px; margin-top: 12px; }
+  .drawer-lang-label { color: #555; font-size: .95rem; }
+}
+
+.navbar { --bs-navbar-padding-x: 0; --bs-navbar-padding-y: 0; padding: 0; }
+
+/* ===== Fluid type ===== */
+html { font-size: clamp(14px, 1.4vw, 16px); }
+
+/* ===== Breakpoints (ย่อเล็กน้อย) ===== */
+@media (max-width: 1200px) {
+  :root { --nav-h: 60px; }
+  .primary-nav { gap: clamp(12px, 2.5vw, 32px); }
+  .nav-link-btn { padding: 6px 2px; font-size: .95rem; }
+  .btn-login { padding: 9px 14px; border-radius: 8px; }
+  .right-rail { gap: 10px; }
+}
+@media (max-width: 992px) {
+  :root { --nav-h: 56px; }
+  .navbar-inner { min-height: var(--nav-h); }
+  .primary-nav { gap: clamp(10px, 2.2vw, 24px); margin-left: clamp(6px, 1.6vw, 16px); }
+  .nav-link-btn { padding: 6px 2px; font-size: .93rem; }
+}
+@media (max-width: 768px) {
+  :root { --nav-h: 52px; }
+}
+@media (max-width: 576px) {
+  :root { --nav-h: 48px; }
+  .navbar-inner { min-height: var(--nav-h); }
+  .custom-burger { padding: 6px; }
+}

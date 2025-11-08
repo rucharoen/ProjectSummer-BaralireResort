@@ -1,0 +1,55 @@
+.promotion-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ========== มือถือ: สไลด์แนวนอน ========== */
+.promotion-row {
+  display: flex;
+  gap: 14px;
+  padding: 0 24px 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+}
+
+.promotion-row > * {
+  flex: 0 0 80%;            /* การ์ดกินเกือบเต็มจอมือถือ */
+  scroll-snap-align: start;
+}
+
+.promotion-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.dot { width: 10px; height: 10px; background:#bbb; border-radius: 50%; }
+.dot.active { background:#000; }
+
+/* ========== ≥768px: ใช้ GRID 2 คอลัมน์ (โน้ตบุ๊ก/แท็บเล็ต) ========== */
+@media (min-width: 768px) {
+  .promotion-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 ใบต่อแถว */
+    gap: 24px;
+    overflow: visible;       /* ไม่ต้องสกรอลล์แนวนอน */
+    padding: 0 12px 12px;
+  }
+  .promotion-row > * {
+    flex: initial;           /* ยกเลิกค่าจากมือถือ */
+    width: auto;
+  }
+  .promotion-dots { display: none; }  /* ซ่อนจุด */
+}
+
+/* ========== ≥1200px: GRID 3 คอลัมน์ (เดสก์ท็อปกว้าง) ========== */
+@media (min-width: 1200px) {
+  .promotion-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 ใบต่อแถว */
+    gap: 24px 24px;
+    max-width: 1200px;   /* ปรับได้ตาม container ของคุณ */
+    margin: 0 auto;      /* จัดกลาง */
+  }
+}

@@ -1,0 +1,416 @@
+/* ============ Scope ทั้งหน้า (ความจำเพาะต่ำ) ============ */
+.sp {
+  --sky: #CFF4FF;
+  --ink: #0f172a;
+  --slate: #d41d1d;
+  --line: #e2e8f0;
+  --green: #72B54D;
+  --green-d: #047857;
+
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  color: var(--ink);
+}
+
+.sp-loading {
+  padding: 24px;
+}
+
+/* count */
+.sp__count {
+  font-weight: 700;
+  color: var(--slate);
+  font-size: 20px;
+  text-align: right;
+  margin: 10px 0 16px;
+}
+
+/* mobile search bar */
+.msb {
+  background: rgba(0, 186, 242, 0.2);
+  border-radius: 6px;
+  padding: 10px;
+  margin: 12px 12px 8px;
+}
+.msb__inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  border: 0;
+}
+.msb__text {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.msb__line-top {
+  font-weight: 700;
+}
+.msb__line-bottom {
+  color: #6b7280;
+}
+.msb__icon {
+  font-size: 22px;
+}
+@media (min-width: 769px) {
+  .msb {
+    display: none;
+  }
+}
+
+/* bottom sheet (editor) */
+.sheet {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: flex-end;
+  z-index: 50;
+}
+.sheet__card {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 14px 16px 16px;
+  margin: 0 auto;
+}
+.sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+.sheet__close {
+  background: none;
+  border: 0;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+.sheet__form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sheet__label {
+  font-size: 13px;
+  color: #475569;
+}
+.sheet__input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.sheet__apply {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #0ea5e9;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* layout list */
+.sp-list {
+  display: grid;
+  gap: 16px;
+}
+.sp-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 992px) {
+  .sp-card {
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 18px;
+  }
+}
+@media (min-width: 1280px) {
+  .sp {
+    max-width: 1200px;
+    padding: 20px 24px;
+  }
+  .sp-card {
+    grid-template-columns: 0.4fr 0.6fr;
+    gap: 20px;
+  }
+}
+
+/* left */
+.sp-card__left {
+  background: var(--sky);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.sp-card__title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+.sp-media {
+  display: grid;
+  gap: 12px;
+}
+.sp-media__main {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+.sp-media__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sp-media__sub {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.sp-amen-brief {
+  margin-top: 12px;
+  color: var(--slate);
+  font-size: 14px;
+}
+.sp-amen-brief__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.sp-link {
+  margin-top: 10px;
+  background: none;
+  border: 0;
+  color: #ea580c;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* right */
+.sp-card__right {
+}
+.sp-right__head {
+  background: var(--sky);
+  color: #334155;
+  text-align: center;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+/* rate */
+.sp-rate-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+.sp-rate {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .sp-rate {
+    grid-template-columns: 1fr 270px;
+    align-items: stretch;
+  }
+}
+
+.sp-rate__features {
+  min-width: 0;
+}
+.sp-feat {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sp-feat li {
+  display: flex;
+  gap: 8px;
+  color: #334155;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.sp-rate__box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden; /* ป้องกันเลยขอบ */
+}
+.sp-rate__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sp-rate__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp-stars {
+  color: #f97316;
+}
+.sp-rate__count {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sp-saving {
+  text-align: right;
+}
+.sp-saving--right {
+  align-self: flex-end;
+}
+.sp-saving__strike {
+  color: #64748b;
+  font-size: 13px;
+  text-decoration: line-through;
+}
+.sp-saving__green {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.sp-price__strike {
+  color: #64748b;
+  font-size: 13px;
+  text-decoration: line-through;
+  visibility: hidden;
+  height: 18px;
+}
+.sp-price__strike.is-visible {
+  visibility: visible;
+}
+.sp-price__main {
+  text-align: right;
+  color: #065f46;
+  font-weight: 800;
+  font-size: 18px;
+}
+.sp-price__main--only {
+  margin-top: 8px;
+}
+.sp-price__num {
+  font-size: 24px;
+}
+.sp-price__note {
+  text-align: right;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.sp-actions {
+  display: flex;
+  flex-wrap: wrap; /* ✅ ให้ตัดบรรทัดได้ถ้าพื้นที่ไม่พอ */
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  max-width: 100%;
+}
+.sp-actions__btns {
+  display: inline-flex;
+  gap: 5px;
+}
+
+/* qty (หนึ่งเซ็ตใช้ซ้ำได้ทั่วไป) */
+.qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+}
+.qty__btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: #fff;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+}
+.qty__btn:hover {
+  background: #f8fafc;
+}
+.qty__val {
+  min-width: 34px;
+  text-align: center;
+}
+
+/* buttons */
+.btn {
+  padding: 7px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  min-width: 92px;
+  
+}
+.btn--outline {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #334155;
+}
+.btn--outline:hover {
+  background: #f8fafc;
+}
+.btn--primary {
+  background: var(--green);
+  color: #fff;
+  border: 0;
+}
+.btn--primary:hover {
+  background: var(--green-d);
+}
+
+/* ทำให้ปุ่มแน่ใจว่าอยู่ชั้นคลิกได้ */
+.sp-card__left {
+  position: relative;
+  z-index: 1;
+}
+.sp-link {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* กันกรณีมีอะไรทับจากฝั่งขวา */
+.sp-card__right {
+  position: relative;
+  z-index: 1;
+}
+
+.sp-card__left {
+  position: relative;
+  z-index: 1;
+}
+.sp-link {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}

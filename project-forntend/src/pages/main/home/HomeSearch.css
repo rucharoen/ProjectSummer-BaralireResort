@@ -1,0 +1,58 @@
+/* ===== Search box sizing (desktop/tablet) ===== */
+#search.search-box-wrapper {
+  /* ซ้อนทับ hero เหมือนเดิม */
+  position: relative;
+  z-index: 2;
+  margin-top: -64px;
+
+  /* จำกัดความกว้าง + จัดกึ่งกลาง */
+  width: min(100%, 1040px); /* ≈ ขนาดในภาพที่ 2 */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* กันชิดขอบจอ */
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ให้เนื้อหาใน SearchBox กินเต็ม wrapper (ไม่ล้น) */
+#search.search-box-wrapper > * {
+  width: 100%;
+}
+
+/* ===== Breakpoints ปรับให้สมูทตามขนาดจอ ===== */
+@media (min-width: 1536px) {
+  #search.search-box-wrapper { width: min(100%, 1140px); } /* จอใหญ่มาก ขยายได้เล็กน้อย */
+}
+
+@media (max-width: 1280px) {
+  #search.search-box-wrapper { width: min(100%, 960px); }
+}
+
+@media (max-width: 992px) {
+  #search.search-box-wrapper { width: min(100%, 820px); }
+}
+
+@media (max-width: 768px) {
+  #search.search-box-wrapper { width: calc(100% - 32px); } /* มือถือ/แท็บเล็ตแคบ */
+}
+
+@media (max-width: 576px) {
+  /* มือถือเล็ก: ยังคงซ้อนทับ hero และมีระยะขอบจอ */
+  .hero .container { padding-left: 0; padding-right: 0; }
+  #search.search-box-wrapper {
+    margin-top: -150px;
+    width: calc(100% - 24px);
+    padding-left: 12px;
+    padding-right: 12px;
+    z-index: 3;
+  }
+}
+
+/* 
+@media (min-width: 1280px) {
+  #search.search-box-wrapper {
+    max-width: 1000px; 
+    margin: -0px auto;
+  }
+} */

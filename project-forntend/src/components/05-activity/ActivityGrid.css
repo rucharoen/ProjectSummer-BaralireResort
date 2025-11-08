@@ -1,0 +1,28 @@
+/* กริดสวย ๆ เว้นระยะเท่ากันทุกทิศ */
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* มือถือ: 2 คอลัมน์ */
+  gap: 16px;                              /* ระยะห่างทุกทิศ */
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.activity-item {
+  display: flex;          /* เผื่ออนาคตอยาก center card ภายใน */
+}
+
+/* แท็บเล็ต */
+@media (min-width: 576px) {
+  .activity-grid {
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    gap: 18px;
+  }
+}
+
+/* เดสก์ท็อป */
+@media (min-width: 992px) {
+  .activity-grid {
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+    gap: 22px;
+  }
+}

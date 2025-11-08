@@ -1,0 +1,104 @@
+:root {
+  --rc-radius: 18px;
+  --rc-pad: 18px;
+  --rc-border: 1px solid #e3e7ee;
+  --rc-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  --rc-title: #111827;
+  --rc-text: #4b5563;
+
+  --rc-btn-bg: #fff;
+  --rc-btn-bd: #c7cfdc;
+  --rc-btn-tx: #111;
+  --rc-btn-bg-h:#E2E2E2;
+  --rc-btn-tx-h: #fff;
+}
+
+/* การ์ด */
+.room-card {
+  grid-template-rows: auto 1fr;
+  background: #fff;
+  border: var(--rc-border);
+  border-radius: var(--rc-radius);
+  box-shadow: var(--rc-shadow);
+  overflow: hidden;
+  height: 100%;
+}
+
+/* รูป */
+.room-media { margin: 0; line-height: 0; }
+.room-media > img {
+  width: 100%; height: auto;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: var(--rc-radius) var(--rc-radius) 0 0;
+  display: block;
+}
+
+/* Footer */
+.room-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: var(--rc-pad);
+  border-top: var(--rc-border);
+  border-bottom-left-radius: var(--rc-radius);
+  border-bottom-right-radius: var(--rc-radius);
+}
+
+.room-meta { min-width: 0; }
+.room-title {
+  font-size: 22px; margin: 0 0 6px 0;
+  color: var(--rc-title); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.room-size { margin: 0; color: var(--rc-text); }
+
+/* ปุ่ม */
+.room-more{
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 18px; background: var(--rc-btn-bg); color: var(--rc-btn-tx);
+  border: 2px solid var(--rc-btn-bd); border-radius: 10px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+.room-more:hover{ background: var(--rc-btn-bg-h); box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+.room-more:active{ transform: translateY(1px); }
+
+/* ชื่อ 2 บรรทัด */
+@media (max-width: 480px){
+  .room-title{
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+/* Tablet */
+@media (max-width: 992px){
+  :root{ --rc-radius: 16px; --rc-pad: 14px; }
+  .room-media > img{ aspect-ratio: 4/3; }
+  .room-footer{ gap: 14px; }
+  .room-title{ font-size: 1rem; }
+  .room-size{ font-size: .9rem; }
+  .room-more{ padding: 8px 14px; font-size: .9rem; border-width: 1.5px; }
+}
+
+/* Mobile */
+@media (max-width: 576px){
+  .room-media > img{ max-height: 280px; }
+  :root{ --rc-radius: 14px; --rc-pad: 12px; }
+  .room-card{ box-shadow: 0 3px 10px rgba(0,0,0,.06); }
+  .room-footer{ gap: 12px; }
+  .room-title{ font-size: .95rem; }
+  .room-size{ font-size: .85rem; }
+  .room-more{ padding: 8px 12px; font-size: .875rem; }
+}
+
+/* เล็กมาก */
+@media (max-width: 360px){
+  .room-media > img{ aspect-ratio: 1/1; }
+  .room-more{ padding: 7px 10px; font-size: .8rem; }
+}
+
+@media (max-width: 400px){
+  .room-media > img{ max-height: 200px; }
+}

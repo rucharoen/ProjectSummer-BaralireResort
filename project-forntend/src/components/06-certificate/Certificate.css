@@ -1,0 +1,30 @@
+.certificate-section {
+  padding: 24px 0 8px;
+}
+
+.cert-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 5vw, 48px); /* ระยะห่างโลโก้ */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-wrap: wrap; /* มือถือให้ตัดบรรทัดได้ */
+}
+
+.cert-item img {
+  display: block;
+  height: clamp(44px, 10vw, 84px); /* ความสูงโลโก้ */
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 0 rgba(0,0,0,0)); /* กันขอบ */
+  user-select: none;
+  -webkit-user-drag: none;
+  opacity: 0.98;
+}
+
+/* ปรับระยะด้านบน-ล่างให้ดูแน่นขึ้นบนจอเล็ก */
+@media (max-width: 576px) {
+  .certificate-section { padding: 16px 0 0; }
+}

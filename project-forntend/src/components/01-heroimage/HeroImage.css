@@ -1,0 +1,84 @@
+/* ฉากหลังของส่วน hero */
+.hero {
+  background: #fff;            /* ให้สะอาด ไม่มีไล่สีเทาด้านข้าง */
+  padding-block: 16px;         /* ระยะห่างจาก navbar */
+}
+
+/* กรอบภาพ: มุมโค้ง + อัตราส่วนคงที่ เพื่อกัน layout shift */
+.hero__figure {
+  aspect-ratio: 16 / 5;   /* เตี้ยลงจาก 16/9 */
+  min-height: 300px;      /* กันไม่ให้เตี้ยเกินไป */
+}
+
+
+/* ทำให้รูปครอบพื้นที่ */
+.hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* overlay ไล่โทนให้ตัวอักษรอ่านง่าย แต่ยังเห็นภาพด้านบนชัด */
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,.10) 0%,
+    rgba(0,0,0,.30) 35%,
+    rgba(0,0,0,.45) 100%
+  );
+  pointer-events: none;
+}
+
+/* จัดวางข้อความ: ขยับขึ้นเหนือกึ่งกลาง (~40%) และล็อก padding ข้าง */
+.hero__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-8%);  /* ปรับตำแหน่งขึ้นจากกึ่งกลางเล็กน้อย */
+  padding-inline: 1rem;
+  text-shadow: 0 6px 24px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.55);
+}
+
+/* Desktop type scale — ใหญ่ หนัก ตามแบบ */
+.hero__title {
+  margin: 0 0 .5rem 0;
+  font-weight: 800;
+  letter-spacing: .4px;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+}
+.hero__subtitle {
+  margin: .25rem 0 0;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2.6vw, 2.4rem);
+}
+
+/* Mobile */
+.hero__title--sm {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.6rem;
+}
+.hero__subtitle--sm {
+  margin-top: .25rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 992px) {
+  .hero__figure { aspect-ratio: 16 / 10; min-height: 340px; }
+  .hero__content { transform: translateY(-4%); }
+}
+@media (max-width: 576px) {
+  .hero { padding-block: 12px; }
+  .hero__figure { min-height: 240px; }
+  .hero__overlay {
+    background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.38) 55%, rgba(0,0,0,.52) 100%);
+  }
+}

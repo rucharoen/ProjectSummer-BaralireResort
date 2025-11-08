@@ -1,0 +1,97 @@
+.promo-card{
+  width:410px;
+  height:521px;
+  display:flex;
+  flex-direction:column;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.16);
+  overflow:hidden;
+  position:relative;
+}
+
+/* รูป */
+.promo-card__media{
+  display:flex;
+  height:260px;                 /* ใกล้ต้นฉบับ */
+  overflow:hidden;
+  position:relative;
+  border-top-left-radius:8px;
+  border-top-right-radius:8px;
+}
+.promo-card__img{
+  height:100%;
+  object-fit:cover;
+}
+.promo-card__img.is-left{ border-top-left-radius:8px; }
+.promo-card__img.is-right{ border-top-right-radius:8px; }
+.promo-card__img.is-single{ width:100%; border-top-left-radius:8px; border-top-right-radius:8px; }
+
+/* ป้ายโปรโมชันซ้อนบนรูป */
+.promo-badge{
+  position:absolute;
+  left:12px;
+  top:12px;
+  background:#d32f2f;          /* แดงตามตัวอย่าง */
+  color:#fff;
+  padding:6px 14px;
+  border-radius:6px;
+  font-weight:800;
+  font-size:18px;
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+  z-index:2;
+}
+
+/* เนื้อหา */
+.promo-card__body{
+  padding:16px 18px 10px;
+}
+.promo-card__title{
+  font-size:clamp(1.25rem, 2.2vw, 2rem); /* ใหญ่ใกล้ภาพ */
+  line-height:1.25;
+  margin:0 0 6px 0;
+  font-weight:600;
+  color:#111;
+}
+.promo-card__highlight{
+  margin:0 0 6px 0;
+  font-size:22px;              /* เด่นสีส้ม */
+  font-weight:400;
+  color:#ff7a00;
+}
+.promo-card__meta{
+  margin:0 0 6px 0;
+  color:#666;
+  font-size:1rem;
+}
+
+/* แถบล่าง */
+.promo-card__footer{
+  margin-top:auto;
+  display:flex;
+  width:100%;
+  border-top:1px solid #e6ebf0; /* เส้นคั่น */
+}
+.promo-card__save{
+  flex:1 1 50%;
+  text-align:center;
+  background:#fff;
+  color:#4f9e2b;
+  border-right:1px solid #e6ebf0;
+  padding:.6rem .75rem;
+  font-weight:800;
+  border-bottom-left-radius:8px;
+  white-space:nowrap;
+}
+.promo-card__cta{
+  flex:1 1 50%;
+  text-align:center;
+  background:#00c4ff;
+  color:#fff;
+  border:none;
+  padding:.7rem 1rem;
+  font-weight:800;
+  border-bottom-right-radius:8px;
+  cursor:pointer;
+}
+.promo-card__cta:hover{ filter:brightness(.95); }

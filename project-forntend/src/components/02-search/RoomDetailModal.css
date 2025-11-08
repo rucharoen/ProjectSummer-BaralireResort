@@ -1,0 +1,188 @@
+/* =========================
+   Room Detail Modal (Popup)
+   ========================= */
+
+/* --- โครงโมดัล --- */
+.rdm {
+  position: fixed;
+  inset: 0;
+  display: none;
+}
+.rdm--open {
+  display: block;
+  z-index: 9999;
+}
+
+/* พื้นหลังโปร่งดำ */
+.rdm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(1px);
+}
+
+/* --- กล่องโมดัล (ชิดบนเล็กน้อย / กึ่งกลางแนวนอน) --- */
+.rdm__panel {
+  position: fixed;
+  left: 50%;
+  top: 16px;                    /* ระยะห่างจากขอบบนเล็กน้อย */
+  transform: translateX(-50%);
+  width: min(980px, 94vw);
+  max-height: calc(100vh - 32px);
+  background: #fff;
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: 0 14px 36px rgba(0,0,0,.35);
+  outline: 6px solid rgba(0,0,0,.06); /* กรอบเทาจางแบบในภาพ */
+  animation: rdmSlideDown .22s ease-out;
+}
+
+@keyframes rdmSlideDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* --- ส่วนหัว --- */
+.rdm__header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  z-index: 1;
+}
+.rdm__title {
+  margin: 0;
+  font-size: 26px;               /* ใหญ่หน่อยตามภาพ */
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.rdm__close {
+  appearance: none;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #222;
+  cursor: pointer;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  transition: background .15s, transform .08s;
+}
+.rdm__close:hover { background: #ececec; }
+.rdm__close:active { transform: scale(.96); }
+
+/* --- สื่อ/ภาพ --- */
+.rdm__media {
+  padding: 12px 16px 0;
+}
+
+/* กล่องรูปหลัก + กรอบน้ำเงิน */
+.rdm__main {
+  position: relative;
+  background: #000;              /* ให้ contrast กับรูป */
+  border-radius: 10px;
+  overflow: hidden;
+  border: 5px solid #1b7fff;     /* ✅ กรอบน้ำเงิน */
+}
+
+/* รูปหลัก: ขนาดพอดี ไม่ล้น */
+.rdm__main img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 55vh;              /* คุมความสูงรวม */
+  object-fit: cover;             /* ฟีลภาพเต็มเฟรม */
+}
+
+/* ตัวเลข 1/5 ที่มุมล่าง */
+.rdm__pager {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* แถบรูปย่อด้านล่าง */
+.rdm__thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.rdm__thumbs img {
+  width: 100%;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .14s, border-color .14s;
+}
+.rdm__thumbs img:hover {
+  transform: translateY(-1px);
+  border-color: #1b7fff;
+}
+
+/* --- ส่วนสิ่งอำนวยความสะดวก --- */
+.rdm__section {
+  padding: 18px 18px 26px;
+}
+.rdm__section-title {
+  font-weight: 800;
+  font-size: 20px;
+  margin: 8px 0 12px;
+}
+.rdm__amenities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 28px;
+}
+.rdm__amenities ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.rdm__amenities li {
+  margin: 6px 0;
+  font-size: 15.5px;
+  line-height: 1.45;
+  list-style: disc;
+}
+
+/* --- Responsive --- */
+@media (max-width: 820px) {
+  .rdm__panel {
+    width: 96vw;
+  }
+  .rdm__title { font-size: 22px; }
+  .rdm__main img { max-height: 50vh; }
+}
+@media (max-width: 560px) {
+  .rdm__panel {
+    left: 0;
+    top: 0;
+    transform: none;             /* เต็มกว้างบนมือถือ */
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    outline: none;
+  }
+  .rdm__header { padding: 12px 12px; }
+  .rdm__title { font-size: 20px; }
+  .rdm__media { padding: 10px 12px 0; }
+  .rdm__main img { max-height: 42vh; }
+  .rdm__amenities { grid-template-columns: 1fr; }
+  .rdm__section { padding: 14px 12px 22px; }
+}
